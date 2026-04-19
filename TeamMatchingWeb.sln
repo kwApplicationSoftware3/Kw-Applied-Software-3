@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37111.16 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamMatching.Web", "TeamMatching.Web\TeamMatching.Web\TeamMatching.Web.csproj", "{ED102942-6698-48BF-BE93-F596DDB98476}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC} = {3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamMatching.Web.Client", "TeamMatching.Web\TeamMatching.Web.Client\TeamMatching.Web.Client.csproj", "{B569F18F-7425-4133-BF20-ED1D1351798F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC} = {3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamMatching.Shared", "TeamMatching.Shared\TeamMatching.Shared.csproj", "{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ED102942-6698-48BF-BE93-F596DDB98476}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED102942-6698-48BF-BE93-F596DDB98476}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED102942-6698-48BF-BE93-F596DDB98476}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED102942-6698-48BF-BE93-F596DDB98476}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B569F18F-7425-4133-BF20-ED1D1351798F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B569F18F-7425-4133-BF20-ED1D1351798F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B569F18F-7425-4133-BF20-ED1D1351798F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B569F18F-7425-4133-BF20-ED1D1351798F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B8FF2B1-085B-401C-BCB2-D164BA4CB2DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3CAD7084-6238-4077-8F85-F67F003B5943}
+	EndGlobalSection
+EndGlobal
