@@ -1,0 +1,203 @@
+@page "/my-activities"
+@inject NavigationManager Nav
+
+<div class="container">
+    <header class="activity-header">
+        <h2 class="page-title">내 활동 관리</h2>
+        <div class="tab-menu">
+            <button class="tab-btn @(activeTab == "posts" ? "active" : "")" @onclick='() => activeTab = "posts"'>내 모집글</button>
+            <button class="tab-btn @(activeTab == "apps" ? "active" : "")" @onclick='() => activeTab = "apps"'>지원 현황</button>
+        </div>
+    </header>
+
+    @if (activeTab == "posts")
+    {
+        <section class="activity-section">
+            <div class="section-header">
+                <h3>내가 올린 모집글 (@myPosts.Count)</h3>
+                <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo("/create-post")'>+ 새 글 쓰기</button>
+            </div>
+            <div class="activity-list">
+                @foreach (var post in myPosts)
+                {
+                    <div class="activity-card card">
+                        <div class="card-content">
+                            <span class="status-badge @(post.IsActive ? "active" : "closed")">@(post.IsActive ? "모집중" : "모집완료")</span>
+                            <h4 class="post-title">@post.Title</h4>
+                            <p class="post-info">지원자: <span class="highlight">@post.ApplicantCount 명</span> | 작성일: @post.CreatedAt</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-outline" @onclick='() => Nav.NavigateTo("/post-detail")'>상세보기</button>
+                            <button class="btn-outline danger">모집종료</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="activity-section">
+            <div class="section-header">
+                <h3>내가 지원한 프로젝트 (@myApplications.Count)</h3>
+            </div>
+            <div class="activity-list">
+                @foreach (var app in myApplications)
+                {
+                    <div class="activity-card card">
+                        <div class="card-content">
+                            <span class="status-badge @app.Status.ToLower()">@app.Status</span>
+                            <h4 class="post-title">@app.ProjectTitle</h4>
+                            <p class="post-info">팀장: @app.LeaderName | 지원일: @app.AppliedAt</p>
+                        </div>
+                        <div class="card-actions">
+                            @if (app.Status == "수락됨")
+                            {
+                                <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo("/review")'>팀원 평가하기</button>
+                            }
+                            else
+                            {
+                                <button class="btn-outline" @onclick='() => Nav.NavigateTo("/post-detail")'>글 보기</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private string activeTab = "posts";
+
+    private List<MyPost> myPosts = new()
+    {
+        new MyPost { Title = "[응용소프트웨어실습] 3조 팀원 모집", ApplicantCount = 5, CreatedAt = "2026-04-18", IsActive = true },
+        new MyPost { Title = "C# 윈폼 게임 토이 프로젝트 같이 하실 분", ApplicantCount = 2, CreatedAt = "2026-04-15", IsActive = false }
+    };
+
+    private List<MyApplication> myApplications = new()
+    {
+        new MyApplication { ProjectTitle = "알고리즘 스터디 하실 분!", LeaderName = "김철수", AppliedAt = "2026-04-19", Status = "대기중" },
+        new MyApplication { ProjectTitle = "React 쇼핑몰 클론 코딩", LeaderName = "이영희", AppliedAt = "2026-04-10", Status = "수락됨" },
+        new MyApplication { ProjectTitle = "유니티 공모전 팀원 찾아요", LeaderName = "박민수", AppliedAt = "2026-04-05", Status = "거절됨" }
+    };
+
+    public class MyPost {
+        public string Title { get; set; } = "";
+        public int ApplicantCount { get; set; }
+        public string CreatedAt { get; set; } = "";
+        public bool IsActive { get; set; }
+    }
+
+    public class MyApplication {
+        public string ProjectTitle { get; set; } = "";
+        public string LeaderName { get; set; } = "";
+        public string AppliedAt { get; set; } = "";
+        public string Status { get; set; } = ""; // 대기중, 수락됨, 거절됨
+    }
+}
+
+<style>
+    .activity-header {
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid var(--border, #e5e7eb);
+    }
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+    }
+    .tab-menu {
+        display: flex;
+        gap: 2rem;
+    }
+    .tab-btn {
+        padding: 0.75rem 0.5rem;
+        background: none;
+        border: none;
+        font-weight: 600;
+        color: var(--text-muted, #6b7280);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    .tab-btn.active {
+        color: var(--primary, #3b82f6);
+        border-bottom-color: var(--primary, #3b82f6);
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .activity-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+    }
+    .post-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    .post-info {
+        font-size: 0.875rem;
+        color: var(--text-muted, #6b7280);
+    }
+    .highlight {
+        color: var(--primary, #3b82f6);
+        font-weight: 700;
+    }
+    .status-badge {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .status-badge.active { background: #dcfce7; color: #166534; }
+    .status-badge.closed { background: #f3f4f6; color: #6b7280; }
+    .status-badge.대기중 { background: #fef9c3; color: #854d0e; }
+    .status-badge.수락됨 { background: #dbeafe; color: #1e40af; }
+    .status-badge.거절됨 { background: #fee2e2; color: #991b1b; }
+    
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .btn-primary-sm {
+        background: var(--primary, #3b82f6);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    .btn-outline {
+        background: white;
+        border: 1px solid var(--border, #e5e7eb);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    .btn-outline.danger {
+        color: #ef4444;
+    }
+    .btn-outline.danger:hover {
+        background: #fef2f2;
+        border-color: #ef4444;
+    }
+</style>

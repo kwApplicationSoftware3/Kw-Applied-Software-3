@@ -1,0 +1,110 @@
+@page "/login"
+@inject NavigationManager Nav
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="auth-title">로그인</h2>
+        <p class="auth-subtitle">팀 매칭 서비스에 다시 오신 것을 환영합니다.</p>
+
+        <form @onsubmit="HandleLogin">
+            <div class="form-group">
+                <label>이메일</label>
+                <input type="email" placeholder="email@example.com" class="form-input" required />
+            </div>
+            
+            <div class="form-group">
+                <label>비밀번호</label>
+                <input type="password" placeholder="••••••••" class="form-input" required />
+            </div>
+
+            <button type="submit" class="btn-primary full-width">로그인</button>
+        </form>
+        
+        <div class="auth-footer">
+            아직 계정이 없으신가요? <a href="/register">회원가입</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void HandleLogin()
+    {
+        // TODO: 실제 로그인 로직 처리
+        // 로그인 성공 시 대시보드로 이동
+        Nav.NavigateTo("/dashboard");
+    }
+}
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: var(--bg-gray, #f9fafb);
+    }
+    .auth-card {
+        background: var(--white, #ffffff);
+        padding: 2.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid var(--border, #e5e7eb);
+        width: 100%;
+        max-width: 450px;
+    }
+    .auth-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        color: var(--text-main, #111827);
+    }
+    .auth-subtitle {
+        text-align: center;
+        color: var(--text-muted, #6b7280);
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary, #3b82f6);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .full-width {
+        width: 100%;
+        padding: 0.875rem;
+        font-size: 1rem;
+        margin-top: 1rem;
+    }
+    .auth-footer {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--text-muted, #6b7280);
+    }
+    .auth-footer a {
+        color: var(--primary, #3b82f6);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+</style>

@@ -1,0 +1,118 @@
+@page "/"
+@inject NavigationManager Nav
+
+<div class="container">
+    <header class="dashboard-header">
+        <h1>팀 매칭 게시판</h1>
+        <button class="btn-primary" @onclick='() => Nav.NavigateTo("/create-post")'>+ 모집글 작성</button>
+    </header>
+
+    <!-- Tag Filter Bar -->
+    <section class="filter-section card">
+        <span class="filter-label">관심 키워드 필터:</span>
+        <div class="tag-cloud">
+            <span class="tag active">All</span>
+            <span class="tag">#C#</span>
+            <span class="tag">#React</span>
+            <span class="tag">#SpringBoot</span>
+            <span class="tag">#Design</span>
+            <span class="tag">#AI</span>
+            <span class="tag">#Game</span>
+        </div>
+    </section>
+
+    <!-- Post Grid -->
+    <div class="post-grid">
+        @for (int i = 1; i <= 6; i++)
+        {
+            <div class="card post-card" @onclick='() => Nav.NavigateTo("/post-detail")'>
+                <div class="post-badge">모집중</div>
+                <h3 class="post-title">응용소프트웨어실습 @(i)조 팀원 모집</h3>
+                <p class="post-desc">C#과 .NET을 활용한 게임 제작 프로젝트입니다. 함께하실 분 찾아요!</p>
+                <div class="post-tags">
+                    <span class="tag-mini">#C#</span>
+                    <span class="tag-mini">#.NET</span>
+                    <span class="tag-mini">#Game</span>
+                </div>
+                <div class="post-footer">
+                    <span class="post-meta">모집 1/4명</span>
+                    <span class="post-meta">방금 전</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .filter-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem 1.5rem;
+    }
+    .filter-label {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .tag-cloud {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+    }
+    .post-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+    .post-card {
+        transition: transform 0.2s;
+        cursor: pointer;
+        position: relative;
+    }
+    .post-card:hover {
+        transform: translateY(-5px);
+    }
+    .post-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #dcfce7;
+        color: #166534;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .post-title {
+        margin-top: 0.5rem;
+        font-size: 1.25rem;
+    }
+    .post-desc {
+        color: #6b7280;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 1rem 0;
+    }
+    .tag-mini {
+        font-size: 0.75rem;
+        color: #3b82f6;
+        margin-right: 0.5rem;
+        font-weight: 600;
+    }
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f3f4f6;
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
+</style>

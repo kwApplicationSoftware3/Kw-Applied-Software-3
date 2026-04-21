@@ -1,0 +1,187 @@
+@page "/review"
+@inject NavigationManager Nav
+
+<div class="container">
+    <div class="review-card">
+        <header class="review-header">
+            <h2 class="review-title">팀원 상호 평가</h2>
+            <p class="review-subtitle">함께 프로젝트를 진행한 팀원들에게 따뜻한 피드백을 남겨주세요.</p>
+            <div class="project-info-badge">프로젝트: 응용소프트웨어실습 3조</div>
+        </header>
+
+        <div class="team-list">
+            @foreach (var member in teamMembers)
+            {
+                <div class="member-review-item card">
+                    <div class="member-profile">
+                        <div class="avatar">@member.Name[0]</div>
+                        <div class="member-info">
+                            <span class="member-name">@member.Name</span>
+                            <span class="member-role">@member.Role</span>
+                        </div>
+                    </div>
+
+                    <div class="rating-section">
+                        <div class="rating-group">
+                            <label>기여도</label>
+                            <div class="stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    int starIndex = i;
+                                    <span class="star @(member.Contribution >= starIndex ? "filled" : "")" 
+                                          @onclick="() => member.Contribution = starIndex">★</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="rating-group">
+                            <label>신뢰도(커뮤니케이션)</label>
+                            <div class="stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    int starIndex = i;
+                                    <span class="star @(member.Reliability >= starIndex ? "filled" : "")" 
+                                          @onclick="() => member.Reliability = starIndex">★</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comment-group">
+                        <textarea class="form-control" placeholder="@member.Name 님에게 남길 한마디" @bind="member.Comment"></textarea>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="form-actions">
+            <button class="btn-secondary" @onclick="GoBack">나중에 하기</button>
+            <button class="btn-primary" @onclick="SubmitReviews">평가 완료 및 제출</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<MemberReview> teamMembers = new()
+    {
+        new MemberReview { Name = "강은우", Role = "백엔드 개발자" },
+        new MemberReview { Name = "이현진", Role = "UI/UX 디자이너" },
+        new MemberReview { Name = "박지민", Role = "프론트엔드 개발자" }
+    };
+
+    private void SubmitReviews()
+    {
+        // TODO: 서버 API 호출하여 평가 데이터 저장
+        Nav.NavigateTo("/profile"); // 완료 후 프로필 페이지로 이동 (점수 반영 확인용)
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/");
+    }
+
+    public class MemberReview
+    {
+        public string Name { get; set; } = "";
+        public string Role { get; set; } = "";
+        public int Contribution { get; set; } = 5;
+        public int Reliability { get; set; } = 5;
+        public string Comment { get; set; } = "";
+    }
+}
+
+<style>
+    .review-card {
+        max-width: 800px;
+        margin: 3rem auto;
+    }
+    .review-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    .review-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    .review-subtitle {
+        color: var(--text-muted, #6b7280);
+    }
+    .project-info-badge {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #eff6ff;
+        color: #1e40af;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .team-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .member-review-item {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 2rem;
+    }
+    .member-profile {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .avatar {
+        width: 48px;
+        height: 48px;
+        background: var(--primary, #3b82f6);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+    .member-name {
+        display: block;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .member-role {
+        font-size: 0.85rem;
+        color: var(--text-muted, #6b7280);
+    }
+    .rating-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+    .rating-group label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .stars {
+        font-size: 1.5rem;
+        color: #d1d5db;
+        cursor: pointer;
+    }
+    .star.filled {
+        color: #fbbf24;
+    }
+    .comment-group textarea {
+        width: 100%;
+        min-height: 80px;
+        resize: none;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 3rem;
+    }
+</style>
