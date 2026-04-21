@@ -1,11 +1,22 @@
 using TeamMatching.Web.Client.Pages;
 using TeamMatching.Web.Components;
+using Microsoft.EntityFrameworkCore;
+using TeamMatching.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load .env file
+DotNetEnv.Env.Load();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+// Get Connection String from Environment Variable
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 var app = builder.Build();
 
