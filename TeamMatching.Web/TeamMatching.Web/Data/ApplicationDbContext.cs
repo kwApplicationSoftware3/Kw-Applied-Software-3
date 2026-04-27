@@ -82,6 +82,20 @@ namespace TeamMatching.Web.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            // 7. 초기 기술 태그 데이터 (Seeding)
+            modelBuilder.Entity<Tag>().HasData(
+                new Tag { Id = 1, Name = "C#" },
+                new Tag { Id = 2, Name = ".NET" },
+                new Tag { Id = 3, Name = "Java" },
+                new Tag { Id = 4, Name = "Spring" },
+                new Tag { Id = 5, Name = "Python" },
+                new Tag { Id = 6, Name = "Node.js" },
+                new Tag { Id = 7, Name = "React" },
+                new Tag { Id = 8, Name = "Vue" },
+                new Tag { Id = 9, Name = "MySQL" },
+                new Tag { Id = 10, Name = "UI/UX" }
+            );
         }
     }
 }

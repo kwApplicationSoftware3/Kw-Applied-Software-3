@@ -1,0 +1,278 @@
+@page "/signup"
+@using TeamMatching.Shared.DTOs
+@using TeamMatching.Shared.Entities
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="container">
+    <div class="auth-card">
+        <h2 class="auth-title">회원가입</h2>
+        <p class="auth-subtitle">팀 매칭 서비스에 오신 것을 환영합니다.</p>
+
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+            
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <InputText id="email" class="form-control" @bind-Value="registerModel.Email" placeholder="example@university.ac.kr" />
+                <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
+            </div>
+            
+            <div class="form-group">
+                <label for="nickname">닉네임</label>
+                <InputText id="nickname" class="form-control" @bind-Value="registerModel.Nickname" placeholder="활동할 닉네임을 입력하세요" />
+                <ValidationMessage For="@(() => registerModel.Nickname)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label for="department">학과</label>
+                <InputText id="department" class="form-control" @bind-Value="registerModel.Department" placeholder="소속 학과를 입력하세요" />
+            </div>
+
+            <div class="form-group">
+                <label for="studentId">학번</label>
+                <InputText id="studentId" class="form-control" @bind-Value="registerModel.StudentId" placeholder="학번을 입력하세요 (예: 2022203002)" />
+            </div>
+
+            <div class="form-group">
+                <label for="bio">자기소개</label>
+                <InputTextArea id="bio" class="form-control" @bind-Value="registerModel.Bio" placeholder="자신을 한 줄로 표현해 보세요" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <InputText type="password" id="password" class="form-control" @bind-Value="registerModel.Password" placeholder="비밀번호를 입력하세요" />
+                <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label for="passwordConfirm">비밀번호 확인</label>
+                <input type="password" id="passwordConfirm" class="form-control" @bind-value="passwordConfirm" placeholder="비밀번호를 다시 입력하세요" />
+                @if (passwordConfirm != "" && registerModel.Password != passwordConfirm)
+                {
+                    <span class="text-danger">비밀번호가 일치하지 않습니다.</span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label>관심 기술 스택 (다중 선택 가능)</label>
+                <div class="tag-selection">
+                    @if (availableTags == null)
+                    {
+                        <span>태그를 불러오는 중...</span>
+                    }
+                    else
+                    {
+                        @foreach (var tag in availableTags)
+                        {
+                            <span class="tag @(registerModel.SelectedTagIds.Contains(tag.Id) ? "active" : "")" 
+                                  @onclick="() => ToggleTag(tag.Id)">
+                                #@tag.Name
+                            </span>
+                        }
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <button type="submit" class="btn-primary full-width mt-2" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span>처리 중...</span>
+                }
+                else
+                {
+                    <span>가입 완료</span>
+                }
+            </button>
+            
+            <div class="auth-links">
+                <span>이미 계정이 있으신가요?</span>
+                <a href="/login" class="link-primary">로그인</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest registerModel = new();
+    private string passwordConfirm = "";
+    private string? errorMessage;
+    private bool isSubmitting = false;
+    private List<Tag>? availableTags;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 서버에서 태그 목록 가져오기
+            availableTags = await Http.GetFromJsonAsync<List<Tag>>("api/tags");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "태그를 불러오지 못했습니다: " + ex.Message;
+        }
+    }
+
+    private void ToggleTag(int tagId)
+    {
+        if (registerModel.SelectedTagIds.Contains(tagId))
+        {
+            registerModel.SelectedTagIds.Remove(tagId);
+        }
+        else
+        {
+            registerModel.SelectedTagIds.Add(tagId);
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        if (registerModel.Password != passwordConfirm)
+        {
+            errorMessage = "비밀번호가 일치하지 않습니다.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/signup", registerModel);
+            var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+
+            if (result != null && result.IsSuccess)
+            {
+                // 회원가입 성공 시 로그인 페이지로 이동
+                Nav.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result?.Message ?? "회원가입에 실패했습니다.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "서버 통신 중 오류가 발생했습니다: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
+
+<style>
+    .auth-card {
+        max-width: 500px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        background: var(--white, #ffffff);
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .auth-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    .auth-subtitle {
+        text-align: center;
+        color: var(--text-muted, #6b7280);
+        margin-bottom: 2rem;
+    }
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary, #3b82f6);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .tag-selection {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+    .tag {
+        user-select: none;
+        cursor: pointer;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        background: #f3f4f6;
+        color: #4b5563;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+    .tag.active {
+        background: #eff6ff;
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    .text-danger {
+        color: #ef4444;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+    .alert-danger {
+        background: #fef2f2;
+        color: #991b1b;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+    .full-width {
+        width: 100%;
+        padding: 0.875rem;
+        font-size: 1rem;
+    }
+    .mt-2 {
+        margin-top: 1rem;
+    }
+    .auth-links {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        color: var(--text-muted, #6b7280);
+    }
+    .link-primary {
+        color: var(--primary, #3b82f6);
+        text-decoration: none;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    .link-primary:hover {
+        text-decoration: underline;
+    }
+</style>
