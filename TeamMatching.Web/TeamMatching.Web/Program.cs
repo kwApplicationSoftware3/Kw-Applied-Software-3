@@ -2,6 +2,7 @@ using TeamMatching.Web.Client.Pages;
 using TeamMatching.Web.Components;
 using Microsoft.EntityFrameworkCore;
 using TeamMatching.Web.Data;
+using TeamMatching.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,11 @@ DotNetEnv.Env.Load();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddControllers(); // API 컨트롤러 기능 활성화
+
+// 의존성 주입(DI) 등록
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Get Connection String from Environment Variable
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
@@ -36,6 +42,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.MapControllers(); // API 컨트롤러 매핑 추가
 
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
