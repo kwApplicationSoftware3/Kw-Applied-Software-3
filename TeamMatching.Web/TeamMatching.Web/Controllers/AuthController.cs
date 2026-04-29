@@ -40,5 +40,27 @@ namespace TeamMatching.Web.Controllers
 
             return BadRequest(result);
         }
+
+        /// <summary>
+        /// 로그인 엔드포인트
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new LoginResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
+            }
+
+            var result = await _authService.LoginAsync(request);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            // 인증 실패는 401 반환이 자연스럽습니다.
+            return Unauthorized(result);
+        }
     }
 }

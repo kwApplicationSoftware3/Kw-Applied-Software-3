@@ -17,15 +17,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
     <ProjectReference Include="..\TeamMatching.Web.Client\TeamMatching.Web.Client.csproj" />
     <ProjectReference Include="..\..\TeamMatching.Shared\TeamMatching.Shared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.10" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
     <Folder Include="Data\" />
-    <Folder Include="Services\" />
     <Folder Include="wwwroot\css\" />
   </ItemGroup>
 

@@ -12,5 +12,6 @@ namespace TeamMatching.Web.Services
         /// 회원가입 처리
         /// </summary>
         Task<RegisterResponse> RegisterAsync(RegisterRequest request);
+        Task<LoginResponse> LoginAsync(LoginRequest request);
     }
 }
