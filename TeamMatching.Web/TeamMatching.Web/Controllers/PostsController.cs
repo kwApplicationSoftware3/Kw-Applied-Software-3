@@ -10,20 +10,20 @@ namespace TeamMatching.Web.Controllers
     /// 인증 관련 API 컨트롤러
     /// </summary>
     [ApiController]
-    [Route("api/[controller]")] // api/post
-    public class PostController : ControllerBase
+    [Route("api/[controller]")] // api/posts
+    public class PostsController : ControllerBase
     {
-        private readonly IPostService _postService;
+        private readonly IPostsService _postsService;
 
-        public PostController(IPostService PostService)
+        public PostsController(IPostsService PostsService)
         {
-            _postService = PostService;
+            _postsService = PostsService;
         }
-
+        
         /// <summary>
         /// 게시글 작성 엔드포인트
         /// </summary>
-        [HttpPost("create-post")]
+        [HttpPost]
         public async Task<ActionResult<CreatePostResponse>> CreatePost([FromBody] CreatePostRequest request)
         {
             // 모델 유효성 검사 (DTO의 [Required] 등 체크)
@@ -38,7 +38,7 @@ namespace TeamMatching.Web.Controllers
                 return Unauthorized(new CreatePostResponse { IsSuccess = false, Message = "사용자 인증 정보가 유효하지 않습니다." });
             }
 
-            var result = await _postService.CreatePostAsync(request, authorId);
+            var result = await _postsService.CreatePostAsync(request, authorId);
 
             if (result.IsSuccess)
             {

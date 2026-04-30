@@ -11,11 +11,11 @@ namespace TeamMatching.Web.Services
     /// <summary>
     /// 인증 관련 비즈니스 로직 구현체
     /// </summary>
-    public class PostService : IPostService
+    public class PostsService : IPostsService
     {
         private readonly ApplicationDbContext _context;
 
-        public PostService(ApplicationDbContext context)
+        public PostsService(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -42,6 +42,7 @@ namespace TeamMatching.Web.Services
                     AuthorId = authorId, 
                     Title = request.Title!,
                     Content = request.Content!,
+                    Summary = request.Summary!,
                     Category = request.Category,
                     MaxMembers = request.MaxMembers,
                 };

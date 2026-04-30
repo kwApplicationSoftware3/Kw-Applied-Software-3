@@ -6,7 +6,7 @@ namespace TeamMatching.Web.Services
     /// <summary>
     /// 인증 관련 비즈니스 로직 인터페이스
     /// </summary>
-    public interface IPostService
+    public interface IPostsService
     {
         /// <summary>
         /// 글 작성 처리
