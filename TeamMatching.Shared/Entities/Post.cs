@@ -22,12 +22,17 @@ namespace TeamMatching.Shared.Entities
 
         [Required]
         public string Content { get; set; } = string.Empty; // 글 내용
+        
+        [Required]
+        public string Summary { get; set; } = string.Empty ; // 글 내용 요약
 
         public string? Category { get; set; } // 프로젝트 카테고리 (웹, 앱 등)
 
         public PostStatus Status { get; set; } = PostStatus.Recruiting; // 모집 상태 (모집중/진행중/완료)
 
         public int MaxMembers { get; set; } = 2; // 모집 정원
+
+        public int CurrentMembers { get; set; } = 1; // 현재 모집 인원수
 
         public string? ContactUrl { get; set; } // 오픈카톡 등 연락 링크
 

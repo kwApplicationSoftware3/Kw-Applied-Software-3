@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <div class="app-wrapper">
@@ -10,9 +12,16 @@
             </div>
             <nav class="nav-links">
                 <a href="/" class="nav-link">게시판</a>
-                <a href="/my-activities" class="nav-link">내 활동</a>
-                <a href="/profile" class="nav-link">프로필</a>
-                <button class="btn-login-sm" @onclick='() => Nav.NavigateTo("/login")'>로그인</button>
+                @if (isLoggedIn)
+                {
+                    <a href="/my-activities" class="nav-link">내 활동</a>
+                    <a href="/profile" class="nav-link">내 정보</a>
+                    <button type="button" class="btn-login-sm" @onclick="HandleLogout">로그아웃</button>
+                }
+                else
+                {
+                    <button type="button" class="btn-login-sm" @onclick='() => Nav.NavigateTo("/login")'>로그인</button>
+                }
             </nav>
         </div>
     </header>
@@ -29,6 +38,52 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private bool isLoggedIn;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += HandleLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RefreshLoginState();
+        }
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(RefreshLoginState);
+    }
+
+    private async Task RefreshLoginState()
+    {
+        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "authToken");
+        var nextState = !string.IsNullOrWhiteSpace(token);
+
+        if (isLoggedIn != nextState)
+        {
+            isLoggedIn = nextState;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        isLoggedIn = false;
+        Nav.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= HandleLocationChanged;
+    }
+}
 
 <style>
     .top-nav {
@@ -78,5 +133,8 @@
         border-radius: 0.5rem;
         font-weight: 600;
         cursor: pointer;
+    }
+    .btn-login-sm:hover {
+        background: #e5e7eb;
     }
 </style>

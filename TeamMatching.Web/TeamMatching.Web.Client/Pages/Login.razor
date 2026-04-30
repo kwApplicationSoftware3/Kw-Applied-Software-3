@@ -1,25 +1,39 @@
 @page "/login"
+@using TeamMatching.Shared.DTOs
+@inject HttpClient Http
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <div class="auth-container">
     <div class="auth-card">
         <h2 class="auth-title">로그인</h2>
-        <p class="auth-subtitle">팀 매칭 서비스에 다시 오신 것을 환영합니다.</p>
+        <p class="auth-subtitle">팀 매칭 서비스를 계속 이용하려면 로그인해주세요.</p>
 
-        <form @onsubmit="HandleLogin">
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
             <div class="form-group">
-                <label>이메일</label>
-                <input type="email" placeholder="email@example.com" class="form-input" required />
-            </div>
-            
-            <div class="form-group">
-                <label>비밀번호</label>
-                <input type="password" placeholder="••••••••" class="form-input" required />
+                <label for="email">이메일</label>
+                <InputText id="email" type="email" class="form-input" @bind-Value="loginModel.Email" placeholder="email@example.com" />
+                <ValidationMessage For="@(() => loginModel.Email)" class="text-danger" />
             </div>
 
-            <button type="submit" class="btn-primary full-width">로그인</button>
-        </form>
-        
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <InputText id="password" type="password" class="form-input" @bind-Value="loginModel.Password" placeholder="비밀번호를 입력하세요" />
+                <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <button type="submit" class="btn-primary full-width" disabled="@isSubmitting">
+                @(isSubmitting ? "로그인 중..." : "로그인")
+            </button>
+        </EditForm>
+
         <div class="auth-footer">
             아직 계정이 없으신가요? <a href="/signup">회원가입</a>
         </div>
@@ -27,11 +41,37 @@
 </div>
 
 @code {
-    private void HandleLogin()
+    private readonly LoginRequest loginModel = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task HandleLogin()
     {
-        // TODO: 실제 로그인 로직 처리
-        // 로그인 성공 시 대시보드로 이동
-        Nav.NavigateTo("/dashboard");
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+            if (response.IsSuccessStatusCode && result?.IsSuccess == true && !string.IsNullOrWhiteSpace(result.AccessToken))
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "authToken", result.AccessToken);
+                Nav.NavigateTo("/");
+                return;
+            }
+
+            errorMessage = result?.Message ?? "로그인에 실패했습니다.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "서버 통신 중 오류가 발생했습니다: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 }
 
@@ -106,5 +146,19 @@
     }
     .auth-footer a:hover {
         text-decoration: underline;
+    }
+    .text-danger {
+        color: #ef4444;
+        display: block;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+    .alert-danger {
+        background: #fef2f2;
+        color: #991b1b;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
     }
 </style>
