@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace TeamMatching.Web.Services
 {
     /// <summary>
-    /// 인증 관련 비즈니스 로직 구현체
+    /// 인증 관련 비즈니스 로직 구현체ㅡ인글작성
     /// </summary>
     public class PostsService : IPostsService
     {

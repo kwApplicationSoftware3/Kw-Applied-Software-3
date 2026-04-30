@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using TeamMatching.Shared.DTOs;
 using TeamMatching.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TeamMatching.Web.Controllers
 {
@@ -23,6 +24,7 @@ namespace TeamMatching.Web.Controllers
         /// <summary>
         /// 게시글 작성 엔드포인트
         /// </summary>
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<CreatePostResponse>> CreatePost([FromBody] CreatePostRequest request)
         {

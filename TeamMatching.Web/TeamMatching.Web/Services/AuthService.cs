@@ -88,6 +88,9 @@ namespace TeamMatching.Web.Services
 
                 // 3. JWT 생성
                 var secret = Environment.GetEnvironmentVariable("JWT_SECRET");
+                var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TeamMatchingWeb"; 
+                var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TeamMatchingUsers"; 
+
                 if (string.IsNullOrEmpty(secret))
                 {
                     return new LoginResponse { IsSuccess = false, Message = "서버 JWT 시크릿이 설정되어 있지 않습니다." };
@@ -109,6 +112,8 @@ namespace TeamMatching.Web.Services
                 var expires = DateTime.UtcNow.AddMinutes(accessExpMin);
 
                 var jwt = new JwtSecurityToken(
+                    issuer: issuer, 
+                    audience: audience,
                     claims: claims,
                     expires: expires,
                     signingCredentials: creds
