@@ -61,22 +61,22 @@ namespace TeamMatching.Web.Data
             // 4. Review 관련 외래키 설정 (복합 관계이므로 Delete 수동 제어)
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Reviewer)
-                .WithMany()
+                .WithMany(u => u.WrittenReviews) // 빈 괄호 안에 프로퍼티 명시
                 .HasForeignKey(r => r.ReviewerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Reviewee)
-                .WithMany()
+                .WithMany(u => u.ReceivedReviews) // 빈 괄호 안에 프로퍼티 명시
                 .HasForeignKey(r => r.RevieweeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // 5. TeamMember 관계 설정
             modelBuilder.Entity<TeamMember>()
-                .HasOne(tm => tm.User)
-                .WithMany()
-                .HasForeignKey(tm => tm.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(tm => tm.User)
+            .WithMany(u => u.TeamMemberships) // 명시적 연결 추가
+            .HasForeignKey(tm => tm.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
             // 6. User 이메일 유니크 설정
             modelBuilder.Entity<User>()

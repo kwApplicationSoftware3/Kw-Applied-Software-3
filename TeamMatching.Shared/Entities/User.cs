@@ -39,7 +39,7 @@ namespace TeamMatching.Shared.Entities
         public ICollection<UserTag> UserTags { get; set; } = new List<UserTag>(); // 보유 기술 스택
         public ICollection<Post> MyPosts { get; set; } = new List<Post>(); // 내가 작성한 글
         public ICollection<Application> MyApplications { get; set; } = new List<Application>(); // 내 지원서 목록
-        public ICollection<Team> MyTeams { get; set; } = new List<Team>(); // 내가 속한 팀
+        public ICollection<TeamMember> TeamMemberships { get; set; } = new List<TeamMember>(); // 내가 속한 팀
         [InverseProperty("Reviewer")]
         public ICollection<Review> WrittenReviews { get; set; } = new List<Review>(); // 내가 한 평가 리스트
         [InverseProperty("Reviewee")]

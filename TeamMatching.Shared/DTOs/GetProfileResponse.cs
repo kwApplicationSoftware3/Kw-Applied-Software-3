@@ -1,13 +1,18 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using TeamMatching.Shared.Entities;
+using TeamMatching.Shared.Enums;
 
 namespace TeamMatching.Shared.DTOs
 {
     public class ProfileTeamDto
     {
-        public string TeamName { get; set; }
+        public string TeamName { get; set; } = string.Empty;// 팀명
 
-        public string Role { get; set; }
+        public TeamRole Role { get; set; } = TeamRole.Member; // 팀 내 역할 (팀장/팀원)
+
+        public string? Position { get; set; } // 팀 내 구체적 역할 (백엔드, 프론트엔드, 디자이너 등)
+
+        public PostStatus Status { get; set; } // 진행 상태 
     }
     public class GetProfileResponse
     {

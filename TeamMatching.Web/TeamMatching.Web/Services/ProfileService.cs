@@ -1,4 +1,6 @@
-﻿using TeamMatching.Shared.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
+using TeamMatching.Shared.DTOs;
+using TeamMatching.Shared.Enums;
 using TeamMatching.Web.Data;
 
 namespace TeamMatching.Web.Services
@@ -22,7 +24,12 @@ namespace TeamMatching.Web.Services
                 }
 
                 // 1. 유저 존재 확인
-                var user = await _context.Users.FindAsync(UserId);
+                var user = await _context.Users
+                    .Include(u => u.UserTags)
+                    .Include(u => u.TeamMemberships)         // 내 팀 정보 조인
+                    .ThenInclude(tm => tm.Team)              // 팀 기본 정보 조인
+                    .ThenInclude(t => t.Post)                // 팀과 연결된 모집글(상태 확인용) 조인
+                    .FirstOrDefaultAsync(u => u.Id == UserId);
                 if (user == null)
                 {
                     return new GetProfileResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
@@ -38,7 +45,13 @@ namespace TeamMatching.Web.Services
                     ContributionScore = user.ContributionScore,
                     CommunicationScore = user.CommunicationScore,
                     UserTagIds = user.UserTags.Select(ut => ut.TagId).ToList(),
-                    MyTeams = new List<ProfileTeamDto>()
+                    MyTeams = user.TeamMemberships.Select(tm => new ProfileTeamDto
+                    {
+                        TeamName = tm.Team.TeamName,
+                        Role = tm.Role,
+                        Position = tm.Position, 
+                        Status = tm.Team.Post.Status
+                    }).ToList()
                 };
             }
             catch (Exception ex)
@@ -52,11 +65,13 @@ namespace TeamMatching.Web.Services
             {
                 if (userId <= 0)
                 {
-                    return new UpdateProfileResponse { IsSuccess = false, Message = "로그인 정보가 유효하지 않습니다." };
+                    return new UpdateProfileResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
                 // 1. 사용자 존재 확인
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users
+                    .Include(u => u.UserTags)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
                     return new UpdateProfileResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
@@ -64,11 +79,19 @@ namespace TeamMatching.Web.Services
                 
                 user.Nickname = request.Nickname;
                 user.Bio = request.Bio;
+                user.ProfileImageUrl = request.profileImageUrl;
                 user.UpdatedAt = DateTime.Now;
-                if (request.SelectedTagIds != null)
+                if (request.SelectedTagIds != null && request.SelectedTagIds.Any())
                 {
                     user.UserTags.Clear();
-                    foreach(var tagId in request.SelectedTagIds)
+
+                    // [중요] DB에 실제 존재하는 Tag인지 확인 후 추가
+                    var validTagIds = await _context.Tags
+                        .Where(t => request.SelectedTagIds.Contains(t.Id))
+                        .Select(t => t.Id)
+                        .ToListAsync();
+
+                    foreach (var tagId in validTagIds)
                     {
                         user.UserTags.Add(new Shared.Entities.UserTag { TagId = tagId });
                     }

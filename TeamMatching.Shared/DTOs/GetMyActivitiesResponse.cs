@@ -8,7 +8,7 @@ namespace TeamMatching.Shared.DTOs
     {
         public int PostId { get; set; }
 
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         public PostStatus Status { get; set; }
 
@@ -21,9 +21,9 @@ namespace TeamMatching.Shared.DTOs
     {
         public int PostId { get; set; }
 
-        public string Nickname { get; set; }
+        public string Nickname { get; set; } = string.Empty;
 
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         public ApplicationStatus Status { get; set; }
 
@@ -34,7 +34,7 @@ namespace TeamMatching.Shared.DTOs
     {
         public int TeamId { get; set; }
 
-        public string TeamName { get; set; }
+        public string TeamName { get; set; } = string.Empty;
 
         public int PostId { get; set; }
     }
