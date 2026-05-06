@@ -239,7 +239,7 @@ namespace TeamMatching.Web.Services
                     return new ClosePostResponse { IsSuccess = false, Message = "모집글을 마감할 권한이 없습니다." };
                 }
 
-                // 2. 모집 상태 종료로 변경
+                // 2. 모집 상태 진행중으로 변경
                 post.Status = PostStatus.InProgress;
 
                 var newTeam = new Team
