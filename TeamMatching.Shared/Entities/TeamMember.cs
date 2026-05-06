@@ -22,5 +22,8 @@ namespace TeamMatching.Shared.Entities
         public User? User { get; set; } // 팀원 유저 정보
 
         public TeamRole Role { get; set; } = TeamRole.Member; // 팀 내 역할 (팀장/팀원)
+
+        [MaxLength(30)]
+        public string? Position { get; set; } // 팀 내 구체적 역할 (백엔드, 프론트엔드, 디자이너 등)
     }
 }

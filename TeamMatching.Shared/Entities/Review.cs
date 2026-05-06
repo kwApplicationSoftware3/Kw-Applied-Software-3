@@ -28,13 +28,13 @@ namespace TeamMatching.Shared.Entities
         public User? Reviewee { get; set; } // 피평가자 정보
 
         [Range(1, 5)]
-        public int ReliabilityScore { get; set; } // 신뢰도 점수 (1~5)
+        public float ReliabilityScore { get; set; } // 신뢰도 점수 (1~5)
 
         [Range(1, 5)]
-        public int ContributionScore { get; set; } // 기여도 점수 (1~5)
+        public float ContributionScore { get; set; } // 기여도 점수 (1~5)
 
         [Range(1, 5)]
-        public int CommunicationScore { get; set; } // 소통 점수 (1~5)
+        public float CommunicationScore { get; set; } // 소통 점수 (1~5)
 
         public string? Comment { get; set; } // 상세 평가 내용
 

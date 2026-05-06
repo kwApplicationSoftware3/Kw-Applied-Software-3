@@ -21,7 +21,8 @@ builder.Services.AddControllers(); // API 컨트롤러 기능 활성화
 // 의존성 주입(DI) 등록
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
-
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IMyActivitiesService, MyActivitiesService>();
 
 var JWTString = Environment.GetEnvironmentVariable("JWT_SECRET");
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TeamMatchingWeb";
