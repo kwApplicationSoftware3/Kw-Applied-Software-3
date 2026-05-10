@@ -1,9 +1,8 @@
 @page "/create-post"
 @attribute [Authorize]
-@using System.Net.Http.Headers
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
-@inject HttpClient Http
+@inject PostService PostService
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -114,7 +113,7 @@
     {
         try
         {
-            availableTags = await Http.GetFromJsonAsync<List<Tag>>("api/tags") ?? new();
+            availableTags = await PostService.GetTagsAsync();
         }
         catch (Exception ex)
         {
@@ -143,23 +142,9 @@
 
         try
         {
-            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "authToken");
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                Nav.NavigateTo("/login");
-                return;
-            }
+            var result = await PostService.CreatePostAsync(postModel);
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/posts")
-            {
-                Content = JsonContent.Create(postModel)
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await Http.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync<CreatePostResponse>();
-
-            if (response.IsSuccessStatusCode && result?.IsSuccess == true)
+            if (result?.IsSuccess == true)
             {
                 successMessage = result.Message;
                 Nav.NavigateTo("/");

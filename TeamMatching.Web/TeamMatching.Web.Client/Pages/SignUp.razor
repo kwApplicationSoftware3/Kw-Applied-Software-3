@@ -1,8 +1,8 @@
 @page "/signup"
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
-@using System.Net.Http.Json
-@inject HttpClient Http
+@inject ClientAuthService AuthService
+@inject PostService PostService
 @inject NavigationManager Nav
 
 <div class="container">
@@ -110,8 +110,7 @@
     {
         try
         {
-            // 서버에서 태그 목록 가져오기
-            availableTags = await Http.GetFromJsonAsync<List<Tag>>("api/tags");
+            availableTags = await PostService.GetTagsAsync();
         }
         catch (Exception ex)
         {
@@ -144,12 +143,10 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("api/auth/signup", registerModel);
-            var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+            var result = await AuthService.RegisterAsync(registerModel);
 
             if (result != null && result.IsSuccess)
             {
-                // 회원가입 성공 시 로그인 페이지로 이동
                 Nav.NavigateTo("/login");
             }
             else
