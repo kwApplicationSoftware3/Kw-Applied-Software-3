@@ -55,10 +55,13 @@
                                             <span class="applicant-date">@app.CreatedAt.ToShortDateString()</span>
                                             <p class="applicant-msg">@app.Message</p>
                                             <div class="tag-cloud">
-                                                @foreach (var tid in app.SelectedTagIds)
+                                                @if (app.SelectedTagIds != null)
                                                 {
-                                                    var tname = availableTags?.FirstOrDefault(t => t.Id == tid)?.Name ?? tid.ToString();
-                                                    <span class="tag-mini">#@tname</span>
+                                                    @foreach (var tid in app.SelectedTagIds)
+                                                    {
+                                                        var tname = availableTags?.FirstOrDefault(t => t.Id == tid)?.Name ?? tid.ToString();
+                                                        <span class="tag-mini">#@tname</span>
+                                                    }
                                                 }
                                             </div>
                                         </div>
@@ -161,7 +164,7 @@
         var response = await PostService.GetApplicationsAsync(Id);
         if (response?.IsSuccess == true)
         {
-            applicants = response.Applications;
+            applicants = response.Applications ?? [];
         }
     }
 
@@ -190,18 +193,8 @@
         finally { isSubmitting = false; }
     }
 
-    private void HandleAccept(int appId)
-    {
-        // TODO: 백엔드에 상태 변경 API가 추가되면 연동 예정
-        Console.WriteLine($"Accepting application {appId}");
-    }
-
-    private void HandleReject(int appId)
-    {
-        // TODO: 백엔드에 상태 변경 API가 추가되면 연동 예정
-        Console.WriteLine($"Rejecting application {appId}");
-    }
-
+    private void HandleAccept(int appId) { Console.WriteLine($"Accepting {appId}"); }
+    private void HandleReject(int appId) { Console.WriteLine($"Rejecting {appId}"); }
     private void HandleEdit() { }
     private void HandleDelete() { }
 }

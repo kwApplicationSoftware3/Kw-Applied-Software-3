@@ -1,6 +1,7 @@
 @page "/profile"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
@@ -17,7 +18,7 @@
     {
         <div class="profile-header card">
             <div class="profile-info">
-                <div class="avatar">@profile.Nickname[0]</div>
+                <div class="avatar">@(profile.Nickname?[0] ?? 'U')</div>
                 <div>
                     <h2>@profile.Nickname 님</h2>
                     <p>자기소개: @(profile.Bio ?? "정보가 없습니다.")</p>

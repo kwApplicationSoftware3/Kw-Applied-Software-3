@@ -1,5 +1,6 @@
 @page "/my-activities"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
@@ -27,6 +28,11 @@
     }
     else
     {
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="alert alert-info mb-4">@statusMessage</div>
+        }
+
         @if (activeTab == "posts")
         {
             <section class="activity-section">
@@ -35,6 +41,10 @@
                     <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo("/create-post")'>+ 새 글 쓰기</button>
                 </div>
                 <div class="activity-list">
+                    @if (activities.MyPosts.Count == 0)
+                    {
+                        <p class="empty-text">작성한 모집글이 없습니다.</p>
+                    }
                     @foreach (var post in activities.MyPosts)
                     {
                         <div class="activity-card card">
@@ -49,7 +59,7 @@
                                 <button class="btn-outline" @onclick='() => Nav.NavigateTo($"/post-detail/{post.PostId}")'>상세보기</button>
                                 @if (post.Status == PostStatus.Recruiting)
                                 {
-                                    <button class="btn-outline danger" @onclick="() => HandleClosePost(post.PostId)">모집종료</button>
+                                    <button class="btn-outline danger" @onclick="() => HandleClosePost(post.PostId)" disabled="@isProcessing">모집종료</button>
                                 }
                             </div>
                         </div>
@@ -64,6 +74,10 @@
                     <h3>내가 지원한 프로젝트 (@activities.MyApplications.Count)</h3>
                 </div>
                 <div class="activity-list">
+                    @if (activities.MyApplications.Count == 0)
+                    {
+                        <p class="empty-text">지원한 프로젝트가 없습니다.</p>
+                    }
                     @foreach (var app in activities.MyApplications)
                     {
                         <div class="activity-card card">
@@ -87,6 +101,10 @@
                     <h3>참여 중인 팀 (@activities.MyTeams.Count)</h3>
                 </div>
                 <div class="activity-list">
+                    @if (activities.MyTeams.Count == 0)
+                    {
+                        <p class="empty-text">참여 중인 팀이 없습니다.</p>
+                    }
                     @foreach (var team in activities.MyTeams)
                     {
                         <div class="activity-card card">
@@ -95,7 +113,7 @@
                                 <h4 class="post-title">@team.TeamName</h4>
                             </div>
                             <div class="card-actions">
-                                <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo("/review")'>팀원 평가하기</button>
+                                <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo($"/review/{team.TeamId}")'>팀원 평가하기</button>
                                 <button class="btn-outline" @onclick='() => Nav.NavigateTo($"/post-detail/{team.PostId}")'>상세보기</button>
                             </div>
                         </div>
@@ -109,6 +127,8 @@
 @code {
     private string activeTab = "posts";
     private bool isLoading = true;
+    private bool isProcessing = false;
+    private string? statusMessage;
     private GetMyActivitiesResponse? activities;
 
     protected override async Task OnInitializedAsync()
@@ -135,9 +155,32 @@
 
     private async Task HandleClosePost(int postId)
     {
-        // TODO: 모집 종료 처리 API 연동
-        // var result = await ActivityService.ClosePostAsync(new ClosePostRequest { PostId = postId });
-        // if (result.IsSuccess) await LoadActivities();
+        if (isProcessing) return;
+        
+        isProcessing = true;
+        statusMessage = "모집 종료 처리 중입니다...";
+        
+        try
+        {
+            var result = await ActivityService.ClosePostAsync(new ClosePostRequest { PostId = postId });
+            if (result?.IsSuccess == true)
+            {
+                statusMessage = "모집이 성공적으로 종료되어 팀이 생성되었습니다.";
+                await LoadActivities();
+            }
+            else
+            {
+                statusMessage = "오류: " + (result?.Message ?? "모집 종료에 실패했습니다.");
+            }
+        }
+        catch
+        {
+            statusMessage = "서버 통신 중 오류가 발생했습니다.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
     }
 }
 
@@ -163,5 +206,8 @@
     .btn-primary-sm { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; }
     .btn-outline { background: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; }
     .btn-outline.danger { color: #ef4444; }
+    .btn-outline.danger:hover { background: #fef2f2; border-color: #ef4444; }
     .loading-state, .error-state { text-align: center; padding: 5rem; color: #6b7280; }
+    .empty-text { color: #9ca3af; text-align: center; padding: 2rem; border: 1px dashed #e5e7eb; border-radius: 0.5rem; }
+    .alert-info { background: #eff6ff; color: #1e40af; padding: 1rem; border-radius: 0.5rem; border: 1px solid #dbeafe; }
 </style>
