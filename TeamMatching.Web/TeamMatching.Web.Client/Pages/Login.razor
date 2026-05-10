@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="auth-container">
     <div class="auth-card">
@@ -58,6 +59,7 @@
             if (response.IsSuccessStatusCode && result?.IsSuccess == true && !string.IsNullOrWhiteSpace(result.AccessToken))
             {
                 await JS.InvokeVoidAsync("localStorage.setItem", "authToken", result.AccessToken);
+                ((CustomAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication(result.AccessToken);
                 Nav.NavigateTo("/");
                 return;
             }

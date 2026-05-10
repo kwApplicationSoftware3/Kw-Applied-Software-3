@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
-@implements IDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="app-wrapper">
     <header class="top-nav">
@@ -12,16 +12,19 @@
             </div>
             <nav class="nav-links">
                 <a href="/" class="nav-link">게시판</a>
-                @if (isLoggedIn)
-                {
-                    <a href="/my-activities" class="nav-link">내 활동</a>
-                    <a href="/profile" class="nav-link">내 정보</a>
-                    <button type="button" class="btn-login-sm" @onclick="HandleLogout">로그아웃</button>
-                }
-                else
-                {
-                    <button type="button" class="btn-login-sm" @onclick='() => Nav.NavigateTo("/login")'>로그인</button>
-                }
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/my-activities" class="nav-link">내 활동</a>
+                        <a href="/profile" class="nav-link">내 정보</a>
+                        <button type="button" class="btn-login-sm" @onclick="HandleLogout">로그아웃</button>
+                    </Authorized>
+                    <Authorizing>
+                        <span class="nav-link">확인 중...</span>
+                    </Authorizing>
+                    <NotAuthorized>
+                        <button type="button" class="btn-login-sm" @onclick='() => Nav.NavigateTo("/login")'>로그인</button>
+                    </NotAuthorized>
+                </AuthorizeView>
             </nav>
         </div>
     </header>
@@ -40,34 +43,12 @@
 </div>
 
 @code {
-    private bool isLoggedIn;
-
-    protected override void OnInitialized()
-    {
-        Nav.LocationChanged += HandleLocationChanged;
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await RefreshLoginState();
-        }
-    }
-
-    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        _ = InvokeAsync(RefreshLoginState);
-    }
-
-    private async Task RefreshLoginState()
-    {
-        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "authToken");
-        var nextState = !string.IsNullOrWhiteSpace(token);
-
-        if (isLoggedIn != nextState)
-        {
-            isLoggedIn = nextState;
+            // 클라이언트(WASM)가 구동된 직후 인증 상태를 한 번 더 강제로 확인하게 합니다.
+            await AuthStateProvider.GetAuthenticationStateAsync();
             StateHasChanged();
         }
     }
@@ -75,13 +56,8 @@
     private async Task HandleLogout()
     {
         await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
-        isLoggedIn = false;
+        ((CustomAuthenticationStateProvider)AuthStateProvider).NotifyUserLogout();
         Nav.NavigateTo("/login");
-    }
-
-    public void Dispose()
-    {
-        Nav.LocationChanged -= HandleLocationChanged;
     }
 }
 
