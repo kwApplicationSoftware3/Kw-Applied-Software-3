@@ -15,5 +15,6 @@ namespace TeamMatching.Shared.DTOs
         public int CurrentMembers { get; set; }
         public int MaxMembers { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<string> Tags { get; set; } = new();
     }
 }

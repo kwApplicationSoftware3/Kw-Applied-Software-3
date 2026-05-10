@@ -5,9 +5,9 @@ using TeamMatching.Shared.Entities;
 
 namespace TeamMatching.Web.Client.Services
 {
-    public class PostService : BaseService
+    public class PostClientService : BaseService
     {
-        public PostService(HttpClient http, IJSRuntime js) : base(http, js) { }
+        public PostClientService(HttpClient http, IJSRuntime js) : base(http, js) { }
 
         public async Task<GetPostsResponse?> GetPostsAsync()
         {
@@ -16,7 +16,7 @@ namespace TeamMatching.Web.Client.Services
 
         public async Task<GetPostDetailResponse?> GetPostDetailAsync(int id)
         {
-            await SetAuthorizationHeader(); // 로그인 상태면 내 지원 현황 등을 알기 위해 헤더 설정
+            await SetAuthorizationHeader();
             return await Http.GetFromJsonAsync<GetPostDetailResponse>($"api/posts/{id}");
         }
 

@@ -30,9 +30,10 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
 // 클라이언트 서비스 등록 (SSR 시 필요)
-builder.Services.AddScoped<ClientAuthService>();
-builder.Services.AddScoped<PostService>();
-builder.Services.AddScoped<ActivityService>();
+builder.Services.AddScoped<AuthClientService>();
+builder.Services.AddScoped<PostClientService>();
+builder.Services.AddScoped<ActivityClientService>();
+builder.Services.AddScoped<ProfileClientService>();
 
 // 의존성 주입(DI) 등록
 builder.Services.AddScoped<IAuthService, AuthService>();

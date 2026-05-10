@@ -4,9 +4,9 @@ using TeamMatching.Shared.DTOs;
 
 namespace TeamMatching.Web.Client.Services
 {
-    public class ActivityService : BaseService
+    public class ActivityClientService : BaseService
     {
-        public ActivityService(HttpClient http, IJSRuntime js) : base(http, js) { }
+        public ActivityClientService(HttpClient http, IJSRuntime js) : base(http, js) { }
 
         public async Task<GetMyActivitiesResponse?> GetMyActivitiesAsync()
         {

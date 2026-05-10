@@ -12,8 +12,9 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
 // 클라이언트 서비스 등록
-builder.Services.AddScoped<ClientAuthService>();
-builder.Services.AddScoped<PostService>();
-builder.Services.AddScoped<ActivityService>();
+builder.Services.AddScoped<AuthClientService>();
+builder.Services.AddScoped<PostClientService>();
+builder.Services.AddScoped<ActivityClientService>();
+builder.Services.AddScoped<ProfileClientService>();
 
 await builder.Build().RunAsync();

@@ -4,9 +4,9 @@ using TeamMatching.Shared.DTOs;
 
 namespace TeamMatching.Web.Client.Services
 {
-    public class ClientAuthService : BaseService
+    public class AuthClientService : BaseService
     {
-        public ClientAuthService(HttpClient http, IJSRuntime js) : base(http, js) { }
+        public AuthClientService(HttpClient http, IJSRuntime js) : base(http, js) { }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
         {
