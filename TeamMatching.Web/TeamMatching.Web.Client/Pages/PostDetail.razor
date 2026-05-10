@@ -35,6 +35,43 @@
                         </div>
                     </div>
                 </div>
+
+                @if (post.IsMyPost)
+                {
+                    <div class="card mt-2">
+                        <h3>지원자 현황 (@applicants.Count)</h3>
+                        <div class="applicant-list">
+                            @if (applicants.Count == 0)
+                            {
+                                <p class="empty-text">아직 지원자가 없습니다.</p>
+                            }
+                            else
+                            {
+                                @foreach (var app in applicants)
+                                {
+                                    <div class="applicant-item card">
+                                        <div class="applicant-info">
+                                            <span class="applicant-name">@app.Nickname</span>
+                                            <span class="applicant-date">@app.CreatedAt.ToShortDateString()</span>
+                                            <p class="applicant-msg">@app.Message</p>
+                                            <div class="tag-cloud">
+                                                @foreach (var tid in app.SelectedTagIds)
+                                                {
+                                                    var tname = availableTags?.FirstOrDefault(t => t.Id == tid)?.Name ?? tid.ToString();
+                                                    <span class="tag-mini">#@tname</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="applicant-actions">
+                                            <button class="btn-primary-sm" @onclick="() => HandleAccept(app.ApplicationId)">수락</button>
+                                            <button class="btn-outline-sm danger" @onclick="() => HandleReject(app.ApplicationId)">거절</button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
             </main>
 
             <aside class="detail-sidebar">
@@ -88,6 +125,7 @@
     [Parameter] public int Id { get; set; }
     private GetPostDetailResponse? post;
     private List<Tag>? availableTags;
+    private List<ApplicationItemDto> applicants = [];
     private string applyMessage = "";
     private string? errorMessage;
     private bool isSubmitting;
@@ -98,6 +136,10 @@
         {
             availableTags = await PostService.GetTagsAsync();
             await LoadPost();
+            if (post?.IsMyPost == true)
+            {
+                await LoadApplicants();
+            }
         }
         catch (Exception ex)
         {
@@ -111,6 +153,15 @@
         if (post?.IsSuccess == false)
         {
             errorMessage = post.Message;
+        }
+    }
+
+    private async Task LoadApplicants()
+    {
+        var response = await PostService.GetApplicationsAsync(Id);
+        if (response?.IsSuccess == true)
+        {
+            applicants = response.Applications;
         }
     }
 
@@ -133,13 +184,22 @@
                 await LoadPost();
                 applyMessage = "";
             }
-            else
-            {
-                errorMessage = result?.Message ?? "지원에 실패했습니다.";
-            }
+            else errorMessage = result?.Message ?? "지원에 실패했습니다.";
         }
         catch { errorMessage = "서버 통신 오류."; }
         finally { isSubmitting = false; }
+    }
+
+    private void HandleAccept(int appId)
+    {
+        // TODO: 백엔드에 상태 변경 API가 추가되면 연동 예정
+        Console.WriteLine($"Accepting application {appId}");
+    }
+
+    private void HandleReject(int appId)
+    {
+        // TODO: 백엔드에 상태 변경 API가 추가되면 연동 예정
+        Console.WriteLine($"Rejecting application {appId}");
     }
 
     private void HandleEdit() { }
@@ -154,14 +214,24 @@
     .detail-content p, .content-body { line-height: 1.7; color: #374151; white-space: pre-wrap; }
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
     .tag { background: #eff6ff; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .tag-mini { background: #f3f4f6; color: #4b5563; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; }
     .status-card h3 { margin-bottom: 1.5rem; font-weight: 700; }
     .member-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
     .member-item { display: flex; align-items: center; gap: 0.75rem; }
     .member-name { font-weight: 600; font-size: 0.95rem; }
     .member-placeholder { border: 2px dashed #e5e7eb; padding: 0.75rem; text-align: center; border-radius: 0.5rem; color: #9ca3af; font-size: 0.85rem; }
+    .applicant-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .applicant-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border: 1px solid #f3f4f6; }
+    .applicant-info { flex: 1; }
+    .applicant-name { font-weight: 700; font-size: 1.1rem; }
+    .applicant-date { font-size: 0.8rem; color: #9ca3af; margin-left: 1rem; }
+    .applicant-msg { margin: 0.75rem 0; color: #4b5563; font-size: 0.95rem; }
     .full-width { width: 100%; padding: 0.75rem; }
     .mb-2 { margin-bottom: 0.5rem; }
-    .mt-2 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1.5rem; }
     .loading-state { text-align: center; padding: 5rem; color: #6b7280; }
-    .apply-section textarea { min-height: 100px; resize: none; }
+    .empty-text { color: #9ca3af; padding: 1rem 0; }
+    .btn-primary-sm { background: #3b82f6; color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
+    .btn-outline-sm { background: white; border: 1px solid #d1d5db; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
+    .btn-outline-sm.danger { color: #ef4444; }
 </style>

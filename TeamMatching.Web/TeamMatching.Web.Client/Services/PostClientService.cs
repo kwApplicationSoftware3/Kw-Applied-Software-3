@@ -29,7 +29,7 @@ namespace TeamMatching.Web.Client.Services
 
         public async Task<List<Tag>> GetTagsAsync()
         {
-            return await Http.GetFromJsonAsync<List<Tag>>("api/tags") ?? new();
+            return await Http.GetFromJsonAsync<List<Tag>>("api/tags") ?? [];
         }
 
         public async Task<ApplyPostResponse?> ApplyPostAsync(int postId, ApplyPostRequest request)
@@ -37,6 +37,12 @@ namespace TeamMatching.Web.Client.Services
             await SetAuthorizationHeader();
             var response = await Http.PostAsJsonAsync($"api/posts/{postId}/apply", request);
             return await response.Content.ReadFromJsonAsync<ApplyPostResponse>();
+        }
+
+        public async Task<GetApplicationsResponse?> GetApplicationsAsync(int postId)
+        {
+            await SetAuthorizationHeader();
+            return await Http.GetFromJsonAsync<GetApplicationsResponse>($"api/posts/{postId}/applications");
         }
     }
 }
