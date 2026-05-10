@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TeamMatching.Shared.Entities
 {
@@ -37,5 +38,11 @@ namespace TeamMatching.Shared.Entities
         // 관계 설정
         public ICollection<UserTag> UserTags { get; set; } = new List<UserTag>(); // 보유 기술 스택
         public ICollection<Post> MyPosts { get; set; } = new List<Post>(); // 내가 작성한 글
+        public ICollection<Application> MyApplications { get; set; } = new List<Application>(); // 내 지원서 목록
+        public ICollection<TeamMember> TeamMemberships { get; set; } = new List<TeamMember>(); // 내가 속한 팀
+        [InverseProperty("Reviewer")]
+        public ICollection<Review> WrittenReviews { get; set; } = new List<Review>(); // 내가 한 평가 리스트
+        [InverseProperty("Reviewee")]
+        public ICollection<Review> ReceivedReviews { get; set; } = new List<Review>(); // 내가 받은 평가 리스트
     }
 }
