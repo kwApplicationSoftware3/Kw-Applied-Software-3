@@ -1,9 +1,20 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using TeamMatching.Web.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-// HttpClient 등록: 서버 API와 통신하기 위해 필수입니다.
-// BaseAddress는 앱이 실행되는 현재 서버 주소로 자동 설정됩니다.
+// HttpClient 등록
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// 인증 상태 관리 서비스 등록
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
+// 클라이언트 서비스 등록
+builder.Services.AddScoped<AuthClientService>();
+builder.Services.AddScoped<PostClientService>();
+builder.Services.AddScoped<ActivityClientService>();
+builder.Services.AddScoped<ProfileClientService>();
 
 await builder.Build().RunAsync();

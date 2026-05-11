@@ -4,7 +4,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using TeamMatching.Shared.DTOs;
 using TeamMatching.Web.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace TeamMatching.Web.Controllers
 {

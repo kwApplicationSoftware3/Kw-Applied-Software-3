@@ -25,6 +25,6 @@ namespace TeamMatching.Shared.DTOs
 
         public string? Bio { get; set; } // 자기소개
 
-        public List<int> SelectedTagIds { get; set; } = new List<int>(); // 선택한 기술 스택 태그 ID 목록
+        public List<int> SelectedTagIds { get; set; } = []; // 선택한 기술 스택 태그 ID 목록
     }
 }

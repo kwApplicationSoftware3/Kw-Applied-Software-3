@@ -1,8 +1,12 @@
 @page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
-@inject HttpClient Http
+@inject AuthClientService AuthService
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="auth-container">
     <div class="auth-card">
@@ -41,7 +45,7 @@
 </div>
 
 @code {
-    private readonly LoginRequest loginModel = new();
+    private LoginRequest loginModel = new();
     private string? errorMessage;
     private bool isSubmitting;
 
@@ -52,12 +56,12 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
-            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            var result = await AuthService.LoginAsync(loginModel);
 
-            if (response.IsSuccessStatusCode && result?.IsSuccess == true && !string.IsNullOrWhiteSpace(result.AccessToken))
+            if (result?.IsSuccess == true && !string.IsNullOrWhiteSpace(result.AccessToken))
             {
                 await JS.InvokeVoidAsync("localStorage.setItem", "authToken", result.AccessToken);
+                ((CustomAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication(result.AccessToken);
                 Nav.NavigateTo("/");
                 return;
             }
@@ -76,89 +80,15 @@
 }
 
 <style>
-    .auth-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 80vh;
-        background-color: var(--bg-gray, #f9fafb);
-    }
-    .auth-card {
-        background: var(--white, #ffffff);
-        padding: 2.5rem;
-        border-radius: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        border: 1px solid var(--border, #e5e7eb);
-        width: 100%;
-        max-width: 450px;
-    }
-    .auth-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        text-align: center;
-        margin-bottom: 0.5rem;
-        color: var(--text-main, #111827);
-    }
-    .auth-subtitle {
-        text-align: center;
-        color: var(--text-muted, #6b7280);
-        margin-bottom: 2rem;
-        font-size: 0.95rem;
-    }
-    .form-group {
-        margin-bottom: 1.25rem;
-    }
-    .form-group label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    .form-input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border, #e5e7eb);
-        border-radius: 0.5rem;
-        font-size: 1rem;
-        transition: border-color 0.2s;
-    }
-    .form-input:focus {
-        outline: none;
-        border-color: var(--primary, #3b82f6);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    .full-width {
-        width: 100%;
-        padding: 0.875rem;
-        font-size: 1rem;
-        margin-top: 1rem;
-    }
-    .auth-footer {
-        margin-top: 1.5rem;
-        text-align: center;
-        font-size: 0.875rem;
-        color: var(--text-muted, #6b7280);
-    }
-    .auth-footer a {
-        color: var(--primary, #3b82f6);
-        text-decoration: none;
-        font-weight: 600;
-    }
-    .auth-footer a:hover {
-        text-decoration: underline;
-    }
-    .text-danger {
-        color: #ef4444;
-        display: block;
-        font-size: 0.8rem;
-        margin-top: 0.25rem;
-    }
-    .alert-danger {
-        background: #fef2f2;
-        color: #991b1b;
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-    }
+    .auth-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; background-color: #f9fafb; }
+    .auth-card { background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb; width: 100%; max-width: 450px; }
+    .auth-title { font-size: 1.75rem; font-weight: 800; text-align: center; margin-bottom: 0.5rem; }
+    .auth-subtitle { text-align: center; color: #6b7280; margin-bottom: 2rem; font-size: 0.95rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-input { width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 1rem; }
+    .full-width { width: 100%; padding: 0.875rem; font-size: 1rem; margin-top: 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.5rem; cursor: pointer; }
+    .auth-footer { margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: #6b7280; }
+    .auth-footer a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .alert-danger { background: #fef2f2; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem; }
 </style>

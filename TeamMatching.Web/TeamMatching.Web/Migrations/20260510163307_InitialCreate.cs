@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace TeamMatching.Web.Migrations
 {
     /// <inheritdoc />
@@ -71,15 +73,15 @@ namespace TeamMatching.Web.Migrations
                     AuthorId = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Summary = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Summary = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Category = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    CurrentMembers = table.Column<int>(type: "int", nullable: false),
                     MaxMembers = table.Column<int>(type: "int", nullable: false),
+                    CurrentMembers = table.Column<int>(type: "int", nullable: false),
                     ContactUrl = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ViewCount = table.Column<int>(type: "int", nullable: false),
@@ -188,9 +190,9 @@ namespace TeamMatching.Web.Migrations
                     PostId = table.Column<int>(type: "int", nullable: false),
                     ReviewerId = table.Column<int>(type: "int", nullable: false),
                     RevieweeId = table.Column<int>(type: "int", nullable: false),
-                    ReliabilityScore = table.Column<int>(type: "int", nullable: false),
-                    ContributionScore = table.Column<int>(type: "int", nullable: false),
-                    CommunicationScore = table.Column<int>(type: "int", nullable: false),
+                    ReliabilityScore = table.Column<float>(type: "float", nullable: false),
+                    ContributionScore = table.Column<float>(type: "float", nullable: false),
+                    CommunicationScore = table.Column<float>(type: "float", nullable: false),
                     Comment = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsHidden = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -251,7 +253,9 @@ namespace TeamMatching.Web.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     TeamId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    Role = table.Column<int>(type: "int", nullable: false)
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    Position = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -270,6 +274,23 @@ namespace TeamMatching.Web.Migrations
                         onDelete: ReferentialAction.Restrict);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.InsertData(
+                table: "Tags",
+                columns: new[] { "Id", "Name" },
+                values: new object[,]
+                {
+                    { 1, "C#" },
+                    { 2, ".NET" },
+                    { 3, "Java" },
+                    { 4, "Spring" },
+                    { 5, "Python" },
+                    { 6, "Node.js" },
+                    { 7, "React" },
+                    { 8, "Vue" },
+                    { 9, "MySQL" },
+                    { 10, "UI/UX" }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Applications_PostId",

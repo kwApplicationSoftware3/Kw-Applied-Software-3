@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TeamMatching.Web.Client.Pages;
+using TeamMatching.Web.Client.Services;
 using TeamMatching.Web.Components;
 using TeamMatching.Web.Data;
 using TeamMatching.Web.Services;
@@ -18,23 +19,39 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddControllers(); // API 컨트롤러 기능 활성화
 
+// HttpClient 등록 (서버 측에서도 CustomAuthenticationStateProvider 등에서 필요로 함)
+builder.Services.AddScoped(sp => new HttpClient 
+{ 
+    BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:7141") 
+});
+
+// 인증 상태 관리 서비스 등록 (서버/SSR용)
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
+// 클라이언트 서비스 등록 (SSR 시 필요)
+builder.Services.AddScoped<AuthClientService>();
+builder.Services.AddScoped<PostClientService>();
+builder.Services.AddScoped<ActivityClientService>();
+builder.Services.AddScoped<ProfileClientService>();
+
 // 의존성 주입(DI) 등록
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IMyActivitiesService, MyActivitiesService>();
 
-var JWTString = Environment.GetEnvironmentVariable("JWT_SECRET");
+var JWTString = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "YourSuperSecretKeyForJWTAuth2026!TeamMatching";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TeamMatchingWeb";
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TeamMatchingUsers";
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // 1. 보안팀 고용
-.AddJwtBearer(options => // 2. JWT 스캐너 지급 및 규칙 세팅
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuerSigningKey = true, // 위조 검사 켜기
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JWTString)), // 이 키로 검사해!
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JWTString)),
         ValidateLifetime = true, // 만료 시간 검사 켜기
         ValidateIssuer = true,
         ValidIssuer = jwtIssuer,

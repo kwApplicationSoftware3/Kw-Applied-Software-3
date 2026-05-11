@@ -1,8 +1,10 @@
 @page "/create-post"
-@using System.Net.Http.Headers
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
-@inject HttpClient Http
+@inject PostClientService PostService
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -51,10 +53,6 @@
                     {
                         <span class="tag-helper">태그를 불러오는 중입니다.</span>
                     }
-                    else if (availableTags.Count == 0)
-                    {
-                        <span class="tag-helper">등록된 태그가 없습니다.</span>
-                    }
                     else
                     {
                         @foreach (var tag in availableTags)
@@ -82,11 +80,6 @@
                 <div class="alert alert-danger">@errorMessage</div>
             }
 
-            @if (!string.IsNullOrEmpty(successMessage))
-            {
-                <div class="alert alert-success">@successMessage</div>
-            }
-
             <div class="form-actions">
                 <button type="button" class="btn-secondary" @onclick="GoBack" disabled="@isSubmitting">취소</button>
                 <button type="submit" class="btn-primary" disabled="@isSubmitting">
@@ -98,239 +91,59 @@
 </div>
 
 @code {
-    private readonly CreatePostRequest postModel = new()
-    {
-        Category = "전공 프로젝트",
-        MaxMembers = 2
-    };
-
+    private CreatePostRequest postModel = new();
     private List<Tag>? availableTags;
     private string? errorMessage;
-    private string? successMessage;
     private bool isSubmitting;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            availableTags = await Http.GetFromJsonAsync<List<Tag>>("api/tags") ?? new();
-        }
-        catch (Exception ex)
-        {
-            availableTags = new();
-            errorMessage = "태그를 불러오지 못했습니다: " + ex.Message;
-        }
+        postModel.Category = "전공 프로젝트";
+        postModel.MaxMembers = 2;
+        try { availableTags = await PostService.GetTagsAsync(); }
+        catch { availableTags = []; }
     }
 
     private void ToggleTag(int tagId)
     {
-        if (postModel.SelectedTagIds.Contains(tagId))
-        {
-            postModel.SelectedTagIds.Remove(tagId);
-        }
-        else
-        {
-            postModel.SelectedTagIds.Add(tagId);
-        }
+        if (postModel.SelectedTagIds.Contains(tagId)) postModel.SelectedTagIds.Remove(tagId);
+        else postModel.SelectedTagIds.Add(tagId);
     }
 
     private async Task HandleSubmit()
     {
         isSubmitting = true;
         errorMessage = null;
-        successMessage = null;
-
         try
         {
-            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "authToken");
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                Nav.NavigateTo("/login");
-                return;
-            }
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/posts")
-            {
-                Content = JsonContent.Create(postModel)
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await Http.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync<CreatePostResponse>();
-
-            if (response.IsSuccessStatusCode && result?.IsSuccess == true)
-            {
-                successMessage = result.Message;
-                Nav.NavigateTo("/");
-                return;
-            }
-
-            errorMessage = result?.Message ?? "모집글 작성에 실패했습니다.";
+            var result = await PostService.CreatePostAsync(postModel);
+            if (result?.IsSuccess == true) Nav.NavigateTo("/");
+            else errorMessage = result?.Message ?? "작성 실패";
         }
-        catch (Exception ex)
-        {
-            errorMessage = "서버 통신 중 오류가 발생했습니다: " + ex.Message;
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
+        catch { errorMessage = "서버 통신 오류"; }
+        finally { isSubmitting = false; }
     }
 
-    private void GoBack()
-    {
-        Nav.NavigateTo("/");
-    }
+    private void GoBack() => Nav.NavigateTo("/");
 }
 
 <style>
-    .form-card {
-        max-width: 800px;
-        margin: 3rem auto;
-        padding: 2.5rem;
-        background: var(--white, #ffffff);
-        border: 1px solid var(--border, #e5e7eb);
-        border-radius: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .form-header {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        margin-bottom: 2.5rem;
-        border-bottom: 1px solid var(--border, #e5e7eb);
-        padding-bottom: 1rem;
-    }
-    .btn-back {
-        background: none;
-        border: none;
-        color: var(--text-muted, #6b7280);
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 600;
-    }
-    .btn-back:hover {
-        color: var(--primary, #3b82f6);
-    }
-    .form-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0;
-    }
-    .post-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    .form-row {
-        display: flex;
-        gap: 1.5rem;
-    }
-    .flex-1 {
-        flex: 1;
-    }
-    .form-group label {
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: var(--text-main, #111827);
-    }
-    .form-control {
-        padding: 0.875rem 1rem;
-        border: 1px solid var(--border, #e5e7eb);
-        border-radius: 0.5rem;
-        font-size: 1rem;
-    }
-    .summary-area {
-        min-height: 90px;
-        resize: vertical;
-    }
-    .text-area {
-        min-height: 250px;
-        resize: vertical;
-    }
-    .tag-selection {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        background: #f9fafb;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px dashed var(--border, #e5e7eb);
-    }
-    .tag {
-        border: 1px solid transparent;
-        border-radius: 9999px;
-        background: #f3f4f6;
-        color: #4b5563;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 0.35rem 0.75rem;
-    }
-    .tag.active {
-        background: #eff6ff;
-        border-color: #3b82f6;
-        color: #2563eb;
-    }
-    .tag-helper {
-        color: var(--text-muted, #6b7280);
-        font-size: 0.9rem;
-    }
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 1rem;
-        padding-top: 2rem;
-        border-top: 1px solid var(--border, #e5e7eb);
-    }
-    .btn-secondary {
-        background: #f3f4f6;
-        border: 1px solid #d1d5db;
-        padding: 0.75rem 2rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .btn-secondary:hover {
-        background: #e5e7eb;
-    }
-    .text-danger {
-        color: #ef4444;
-        display: block;
-        font-size: 0.8rem;
-        margin-top: 0.25rem;
-    }
-    .alert {
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        font-size: 0.9rem;
-    }
-    .alert-danger {
-        background: #fef2f2;
-        color: #991b1b;
-    }
-    .alert-success {
-        background: #ecfdf5;
-        color: #065f46;
-    }
-
-    @@media (max-width: 640px) {
-        .form-card {
-            margin: 1rem;
-            padding: 1.5rem;
-        }
-        .form-row {
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .form-actions {
-            flex-direction: column-reverse;
-        }
-    }
+    .form-card { max-width: 800px; margin: 3rem auto; padding: 2.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 1rem; }
+    .form-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; }
+    .btn-back { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 1rem; font-weight: 600; }
+    .form-title { font-size: 1.5rem; font-weight: 700; margin: 0; }
+    .post-form { display: flex; flex-direction: column; gap: 1.5rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-row { display: flex; gap: 1.5rem; }
+    .flex-1 { flex: 1; }
+    .form-control { padding: 0.875rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+    .summary-area { min-height: 90px; }
+    .text-area { min-height: 250px; }
+    .tag-selection { display: flex; flex-wrap: wrap; gap: 0.5rem; background: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px dashed #e5e7eb; }
+    .tag { border: 1px solid transparent; border-radius: 999px; background: #f3f4f6; color: #4b5563; cursor: pointer; font-size: 0.9rem; padding: 0.35rem 0.75rem; }
+    .tag.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 2rem; border-top: 1px solid #e5e7eb; }
+    .btn-primary { background: #3b82f6; color: white; border: none; padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; }
+    .btn-secondary { background: #f3f4f6; border: 1px solid #d1d5db; padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; }
+    .alert-danger { background: #fef2f2; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; }
 </style>

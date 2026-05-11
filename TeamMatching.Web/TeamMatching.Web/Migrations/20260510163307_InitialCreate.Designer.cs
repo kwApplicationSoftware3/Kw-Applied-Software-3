@@ -12,7 +12,7 @@ using TeamMatching.Web.Data;
 namespace TeamMatching.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260427041840_InitialCreate")]
+    [Migration("20260510163307_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -81,11 +81,18 @@ namespace TeamMatching.Web.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("CurrentMembers")
+                        .HasColumnType("int");
+
                     b.Property<int>("MaxMembers")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -130,11 +137,11 @@ namespace TeamMatching.Web.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("CommunicationScore")
-                        .HasColumnType("int");
+                    b.Property<float>("CommunicationScore")
+                        .HasColumnType("float");
 
-                    b.Property<int>("ContributionScore")
-                        .HasColumnType("int");
+                    b.Property<float>("ContributionScore")
+                        .HasColumnType("float");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -145,8 +152,8 @@ namespace TeamMatching.Web.Migrations
                     b.Property<int>("PostId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ReliabilityScore")
-                        .HasColumnType("int");
+                    b.Property<float>("ReliabilityScore")
+                        .HasColumnType("float");
 
                     b.Property<int>("RevieweeId")
                         .HasColumnType("int");
@@ -181,6 +188,58 @@ namespace TeamMatching.Web.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tags");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "C#"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = ".NET"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Java"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Spring"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Python"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Node.js"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "React"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Vue"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "MySQL"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "UI/UX"
+                        });
                 });
 
             modelBuilder.Entity("TeamMatching.Shared.Entities.Team", b =>
@@ -215,6 +274,10 @@ namespace TeamMatching.Web.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Position")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
@@ -313,7 +376,7 @@ namespace TeamMatching.Web.Migrations
                         .IsRequired();
 
                     b.HasOne("TeamMatching.Shared.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("MyApplications")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -362,13 +425,13 @@ namespace TeamMatching.Web.Migrations
                         .IsRequired();
 
                     b.HasOne("TeamMatching.Shared.Entities.User", "Reviewee")
-                        .WithMany()
+                        .WithMany("ReceivedReviews")
                         .HasForeignKey("RevieweeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TeamMatching.Shared.Entities.User", "Reviewer")
-                        .WithMany()
+                        .WithMany("WrittenReviews")
                         .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -400,7 +463,7 @@ namespace TeamMatching.Web.Migrations
                         .IsRequired();
 
                     b.HasOne("TeamMatching.Shared.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("TeamMemberships")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -450,9 +513,17 @@ namespace TeamMatching.Web.Migrations
 
             modelBuilder.Entity("TeamMatching.Shared.Entities.User", b =>
                 {
+                    b.Navigation("MyApplications");
+
                     b.Navigation("MyPosts");
 
+                    b.Navigation("ReceivedReviews");
+
+                    b.Navigation("TeamMemberships");
+
                     b.Navigation("UserTags");
+
+                    b.Navigation("WrittenReviews");
                 });
 #pragma warning restore 612, 618
         }

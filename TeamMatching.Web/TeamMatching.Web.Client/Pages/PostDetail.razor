@@ -1,126 +1,230 @@
-@page "/post-detail"
+@page "/post-detail/{Id:int}"
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeamMatching.Web.Client.Services
+@using TeamMatching.Shared.DTOs
+@using TeamMatching.Shared.Entities
+@inject PostClientService PostService
 @inject NavigationManager Nav
 
 <div class="container">
-    <div class="detail-layout">
-        <!-- Main Content -->
-        <main class="detail-main">
-            <div class="card">
-                <nav class="breadcrumb" @onclick='() => Nav.NavigateTo("/")' style="cursor:pointer;">게시판 > 프로젝트 모집</nav>
-                <h1 class="detail-title">응용소프트웨어실습 3조 팀원 모집</h1>
-                <div class="detail-meta">
-                    <span>작성자: 문인호</span> | <span>조회수: 124</span> | <span>2시간 전</span>
-                </div>
-                
-                <hr />
-
-                <div class="detail-content">
-                    <h3>프로젝트 개요</h3>
-                    <p>본 프로젝트는 "팀원을 찾는 사람들"이라는 주제로, 에브리타임의 파편화된 정보를 통합하여 체계적인 팀 매칭 서비스를 구축하는 것을 목표로 합니다.</p>
-                    
-                    <h3>필요 기술 및 역량</h3>
-                    <ul>
-                        <li>C# 및 .NET 8.0 기반 클라이언트 개발</li>
-                        <li>UI/UX 기획 및 디자인 감각</li>
-                        <li>Git/Github을 통한 협업 경험</li>
-                    </ul>
-
-                    <h3>모집 인원</h3>
-                    <p>프론트엔드 1명, 백엔드 1명 추가 모집합니다.</p>
-                </div>
-            </div>
-        </main>
-
-        <!-- Sidebar (Status) -->
-        <aside class="detail-sidebar">
-            <div class="card status-card">
-                <h3>모집 현황 (2/4)</h3>
-                <div class="member-list">
-                    <div class="member-item">
-                        <div class="member-info">
-                            <span class="member-name">문인호 (조장)</span>
-                            <span class="tag-mini">#C#</span>
+    @if (post == null)
+    {
+        <div class="loading-state">게시글을 불러오는 중입니다...</div>
+    }
+    else
+    {
+        <div class="detail-layout">
+            <main class="detail-main">
+                <div class="card">
+                    <nav class="breadcrumb" @onclick='() => Nav.NavigateTo("/")' style="cursor:pointer;">게시판 > 프로젝트 모집</nav>
+                    <h1 class="detail-title">@post.Title</h1>
+                    <hr />
+                    <div class="detail-content">
+                        <h3>상세 설명</h3>
+                        <div class="content-body">@post.Content</div>
+                        <h3>필요 기술 스택</h3>
+                        <div class="tag-cloud">
+                            @if (availableTags != null && post.SelectedTagIds != null)
+                            {
+                                @foreach (var tagId in post.SelectedTagIds)
+                                {
+                                    var tagName = availableTags.FirstOrDefault(t => t.Id == tagId)?.Name ?? tagId.ToString();
+                                    <span class="tag">#@tagName</span>
+                                }
+                            }
                         </div>
                     </div>
-                    <div class="member-item">
-                        <div class="member-info">
-                            <span class="member-name">강은우</span>
-                            <span class="tag-mini">#SQL</span>
+                </div>
+
+                @if (post.IsMyPost)
+                {
+                    <div class="card mt-2">
+                        <h3>지원자 현황 (@applicants.Count)</h3>
+                        <div class="applicant-list">
+                            @if (applicants.Count == 0)
+                            {
+                                <p class="empty-text">아직 지원자가 없습니다.</p>
+                            }
+                            else
+                            {
+                                @foreach (var app in applicants)
+                                {
+                                    <div class="applicant-item card">
+                                        <div class="applicant-info">
+                                            <span class="applicant-name">@app.Nickname</span>
+                                            <span class="applicant-date">@app.CreatedAt.ToShortDateString()</span>
+                                            <p class="applicant-msg">@app.Message</p>
+                                            <div class="tag-cloud">
+                                                @if (app.SelectedTagIds != null)
+                                                {
+                                                    @foreach (var tid in app.SelectedTagIds)
+                                                    {
+                                                        var tname = availableTags?.FirstOrDefault(t => t.Id == tid)?.Name ?? tid.ToString();
+                                                        <span class="tag-mini">#@tname</span>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="applicant-actions">
+                                            <button class="btn-primary-sm" @onclick="() => HandleAccept(app.ApplicationId)">수락</button>
+                                            <button class="btn-outline-sm danger" @onclick="() => HandleReject(app.ApplicationId)">거절</button>
+                                        </div>
+                                    </div>
+                                }
+                            }
                         </div>
                     </div>
-                    <div class="member-placeholder">남은 자리 (2)</div>
+                }
+            </main>
+
+            <aside class="detail-sidebar">
+                <div class="card status-card">
+                    <h3>모집 현황 (@post.CurrentMembers/@post.MaxMembers)</h3>
+                    <div class="member-list">
+                        <div class="member-item">
+                            <div class="member-info">
+                                <span class="member-name">작성자 (팀장)</span>
+                            </div>
+                        </div>
+                        @for (int i = 0; i < post.MaxMembers - post.CurrentMembers; i++)
+                        {
+                            <div class="member-placeholder">남은 자리</div>
+                        }
+                    </div>
+
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (post.IsMyPost)
+                            {
+                                <button class="btn-outline full-width mb-2" @onclick="HandleEdit">수정하기</button>
+                                <button class="btn-outline danger full-width" @onclick="HandleDelete">삭제하기</button>
+                            }
+                            else
+                            {
+                                <div class="apply-section">
+                                    <textarea class="form-control mb-2" @bind="applyMessage" placeholder="팀장에게 보낼 한마디를 입력하세요."></textarea>
+                                    <button class="btn-primary full-width" @onclick="HandleApply" disabled="@isSubmitting">
+                                        @(isSubmitting ? "지원 중..." : "지원하기")
+                                    </button>
+                                </div>
+                            }
+                        </Authorized>
+                        <NotAuthorized>
+                            <button class="btn-primary full-width" @onclick='() => Nav.NavigateTo("/login")'>로그인하고 지원하기</button>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-2">@errorMessage</div>
+                    }
                 </div>
-                <button class="btn-primary full-width" @onclick="HandleApply">지원하기</button>
-            </div>
-        </aside>
-    </div>
+            </aside>
+        </div>
+    }
 </div>
 
 @code {
-    private void HandleApply()
+    [Parameter] public int Id { get; set; }
+    private GetPostDetailResponse? post;
+    private List<Tag>? availableTags;
+    private List<ApplicationItemDto> applicants = [];
+    private string applyMessage = "";
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
     {
-        // 실제로는 여기서 API를 호출하여 지원 정보를 저장합니다.
-        // 현재는 시뮬레이션으로 바로 활동 관리 페이지로 이동합니다.
-        Nav.NavigateTo("/my-activities");
+        try
+        {
+            availableTags = await PostService.GetTagsAsync();
+            await LoadPost();
+            if (post?.IsMyPost == true)
+            {
+                await LoadApplicants();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "데이터 로딩 중 오류 발생: " + ex.Message;
+        }
     }
+
+    private async Task LoadPost()
+    {
+        post = await PostService.GetPostDetailAsync(Id);
+        if (post?.IsSuccess == false)
+        {
+            errorMessage = post.Message;
+        }
+    }
+
+    private async Task LoadApplicants()
+    {
+        var response = await PostService.GetApplicationsAsync(Id);
+        if (response?.IsSuccess == true)
+        {
+            applicants = response.Applications ?? [];
+        }
+    }
+
+    private async Task HandleApply()
+    {
+        if (string.IsNullOrWhiteSpace(applyMessage))
+        {
+            errorMessage = "지원 메시지를 입력해주세요.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await PostService.ApplyPostAsync(Id, new ApplyPostRequest { Message = applyMessage });
+            if (result?.IsSuccess == true)
+            {
+                await LoadPost();
+                applyMessage = "";
+            }
+            else errorMessage = result?.Message ?? "지원에 실패했습니다.";
+        }
+        catch { errorMessage = "서버 통신 오류."; }
+        finally { isSubmitting = false; }
+    }
+
+    private void HandleAccept(int appId) { Console.WriteLine($"Accepting {appId}"); }
+    private void HandleReject(int appId) { Console.WriteLine($"Rejecting {appId}"); }
+    private void HandleEdit() { }
+    private void HandleDelete() { }
 }
 
 <style>
-    .detail-layout {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 2rem;
-    }
-    .breadcrumb {
-        font-size: 0.85rem;
-        color: #9ca3af;
-        margin-bottom: 1rem;
-    }
-    .detail-title {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-    .detail-meta {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin-bottom: 1.5rem;
-    }
-    .detail-content h3 {
-        margin-top: 2rem;
-        font-size: 1.25rem;
-    }
-    .detail-content p, .detail-content li {
-        line-height: 1.7;
-        color: #374151;
-    }
-    .status-card h3 {
-        margin-bottom: 1.5rem;
-    }
-    .member-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-    .member-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    .member-name {
-        font-weight: 600;
-        display: block;
-    }
-    .member-placeholder {
-        border: 2px dashed #e5e7eb;
-        padding: 1rem;
-        text-align: center;
-        border-radius: 0.5rem;
-        color: #9ca3af;
-        font-size: 0.9rem;
-    }
-    .full-width {
-        width: 100%;
-        padding: 1rem;
-    }
+    .detail-layout { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; margin-top: 2rem; }
+    .breadcrumb { font-size: 0.85rem; color: #9ca3af; margin-bottom: 1rem; }
+    .detail-title { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800; }
+    .detail-content h3 { margin-top: 2rem; font-size: 1.25rem; font-weight: 700; }
+    .detail-content p, .content-body { line-height: 1.7; color: #374151; white-space: pre-wrap; }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    .tag { background: #eff6ff; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .tag-mini { background: #f3f4f6; color: #4b5563; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem; }
+    .status-card h3 { margin-bottom: 1.5rem; font-weight: 700; }
+    .member-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
+    .member-item { display: flex; align-items: center; gap: 0.75rem; }
+    .member-name { font-weight: 600; font-size: 0.95rem; }
+    .member-placeholder { border: 2px dashed #e5e7eb; padding: 0.75rem; text-align: center; border-radius: 0.5rem; color: #9ca3af; font-size: 0.85rem; }
+    .applicant-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .applicant-item { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border: 1px solid #f3f4f6; }
+    .applicant-info { flex: 1; }
+    .applicant-name { font-weight: 700; font-size: 1.1rem; }
+    .applicant-date { font-size: 0.8rem; color: #9ca3af; margin-left: 1rem; }
+    .applicant-msg { margin: 0.75rem 0; color: #4b5563; font-size: 0.95rem; }
+    .full-width { width: 100%; padding: 0.75rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mt-2 { margin-top: 1.5rem; }
+    .loading-state { text-align: center; padding: 5rem; color: #6b7280; }
+    .empty-text { color: #9ca3af; padding: 1rem 0; }
+    .btn-primary-sm { background: #3b82f6; color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
+    .btn-outline-sm { background: white; border: 1px solid #d1d5db; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
+    .btn-outline-sm.danger { color: #ef4444; }
 </style>

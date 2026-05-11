@@ -1,118 +1,120 @@
 @page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeamMatching.Web.Client.Services
+@using TeamMatching.Shared.DTOs
+@using TeamMatching.Shared.Entities
+@inject PostClientService PostService
 @inject NavigationManager Nav
 
 <div class="container">
     <header class="dashboard-header">
         <h1>팀 매칭 게시판</h1>
-        <button class="btn-primary" @onclick='() => Nav.NavigateTo("/create-post")'>+ 모집글 작성</button>
+        <AuthorizeView>
+            <Authorized>
+                <button class="btn-primary" @onclick='() => Nav.NavigateTo("/create-post")'>+ 모집글 작성</button>
+            </Authorized>
+            <NotAuthorized>
+                <button class="btn-primary" @onclick='() => Nav.NavigateTo("/login")'>로그인하고 글쓰기</button>
+            </NotAuthorized>
+        </AuthorizeView>
     </header>
 
-    <!-- Tag Filter Bar -->
     <section class="filter-section card">
         <span class="filter-label">관심 키워드 필터:</span>
         <div class="tag-cloud">
-            <span class="tag active">All</span>
-            <span class="tag">#C#</span>
-            <span class="tag">#React</span>
-            <span class="tag">#SpringBoot</span>
-            <span class="tag">#Design</span>
-            <span class="tag">#AI</span>
-            <span class="tag">#Game</span>
+            <span class="tag @(string.IsNullOrEmpty(selectedTag) ? "active" : "")" @onclick='() => FilterByTag(null)'>All</span>
+            @if (availableTags != null)
+            {
+                @foreach (var tag in availableTags)
+                {
+                    <span class="tag @(selectedTag == tag.Name ? "active" : "")" @onclick="() => FilterByTag(tag.Name)">#@tag.Name</span>
+                }
+            }
         </div>
     </section>
 
-    <!-- Post Grid -->
-    <div class="post-grid">
-        @for (int i = 1; i <= 6; i++)
-        {
-            <div class="card post-card" @onclick='() => Nav.NavigateTo("/post-detail")'>
-                <div class="post-badge">모집중</div>
-                <h3 class="post-title">응용소프트웨어실습 @(i)조 팀원 모집</h3>
-                <p class="post-desc">C#과 .NET을 활용한 게임 제작 프로젝트입니다. 함께하실 분 찾아요!</p>
-                <div class="post-tags">
-                    <span class="tag-mini">#C#</span>
-                    <span class="tag-mini">#.NET</span>
-                    <span class="tag-mini">#Game</span>
+    @if (posts == null)
+    {
+        <div class="loading-state">데이터를 불러오는 중입니다...</div>
+    }
+    else if (posts.Count == 0)
+    {
+        <div class="empty-state card">등록된 모집글이 없습니다. 첫 번째 주인공이 되어보세요!</div>
+    }
+    else
+    {
+        <div class="post-grid">
+            @foreach (var post in filteredPosts)
+            {
+                <div class="card post-card" @onclick='() => Nav.NavigateTo($"/post-detail/{post.Id}")'>
+                    <div class="post-badge recruiting">모집중</div>
+                    <h3 class="post-title">@post.Title</h3>
+                    <p class="post-desc">@post.Summary</p>
+                    <div class="post-tags">
+                        @if (post.Tags != null)
+                        {
+                            @foreach (var tagName in post.Tags)
+                            {
+                                <span class="tag-mini">#@tagName</span>
+                            }
+                        }
+                    </div>
+                    <div class="post-footer">
+                        <span class="post-meta">모집 @post.CurrentMembers/@post.MaxMembers 명</span>
+                        <span class="post-meta">@post.CreatedAt.ToShortDateString()</span>
+                    </div>
                 </div>
-                <div class="post-footer">
-                    <span class="post-meta">모집 1/4명</span>
-                    <span class="post-meta">방금 전</span>
-                </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 </div>
 
+@code {
+    private List<PostListItemDto>? posts;
+    private List<Tag>? availableTags;
+    private string? selectedTag;
+
+    private IEnumerable<PostListItemDto> filteredPosts => 
+        string.IsNullOrEmpty(selectedTag) 
+        ? (posts ?? []) 
+        : (posts?.Where(p => p.Tags != null && p.Tags.Contains(selectedTag!)) ?? []);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await PostService.GetPostsAsync();
+            posts = response?.Data ?? [];
+            availableTags = await PostService.GetTagsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard: {ex.Message}");
+            posts = [];
+        }
+    }
+
+    private void FilterByTag(string? tag)
+    {
+        selectedTag = tag;
+        StateHasChanged();
+    }
+}
+
 <style>
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    .filter-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding: 1rem 1.5rem;
-    }
-    .filter-label {
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .tag-cloud {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-    }
-    .post-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 1.5rem;
-    }
-    .post-card {
-        transition: transform 0.2s;
-        cursor: pointer;
-        position: relative;
-    }
-    .post-card:hover {
-        transform: translateY(-5px);
-    }
-    .post-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #dcfce7;
-        color: #166534;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-    .post-title {
-        margin-top: 0.5rem;
-        font-size: 1.25rem;
-    }
-    .post-desc {
-        color: #6b7280;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        margin: 1rem 0;
-    }
-    .tag-mini {
-        font-size: 0.75rem;
-        color: #3b82f6;
-        margin-right: 0.5rem;
-        font-weight: 600;
-    }
-    .post-footer {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid #f3f4f6;
-        font-size: 0.8rem;
-        color: #9ca3af;
-    }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .filter-section { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 1rem 1.5rem; }
+    .filter-label { font-weight: 600; white-space: nowrap; }
+    .tag-cloud { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px; }
+    .tag { cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 999px; background: #f3f4f6; white-space: nowrap; font-size: 0.85rem; transition: all 0.2s; border: 1px solid transparent; }
+    .tag.active { background: #3b82f6; color: white; border-color: #2563eb; }
+    .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+    .post-card { transition: transform 0.2s; cursor: pointer; position: relative; }
+    .post-card:hover { transform: translateY(-5px); }
+    .post-badge { position: absolute; top: 1rem; right: 1rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; background: #dcfce7; color: #166534; }
+    .post-title { margin-top: 0.5rem; font-size: 1.25rem; padding-right: 3rem; font-weight: 700; }
+    .post-desc { color: #6b7280; font-size: 0.9rem; line-height: 1.5; margin: 1rem 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .tag-mini { font-size: 0.75rem; color: #3b82f6; margin-right: 0.5rem; font-weight: 600; }
+    .post-footer { display: flex; justify-content: space-between; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; font-size: 0.8rem; color: #9ca3af; }
+    .loading-state, .empty-state { text-align: center; padding: 4rem; color: #6b7280; font-size: 1.1rem; }
 </style>
