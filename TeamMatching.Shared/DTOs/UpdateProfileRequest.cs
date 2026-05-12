@@ -18,6 +18,7 @@ namespace TeamMatching.Shared.DTOs
 
         public string? ProfileImageUrl { get; set; } // 프로필 이미지 경로
 
+        [MinLength(6, ErrorMessage = "비밀번호는 최소 6자 이상이어야 합니다.")]
         public string? NewPassword {  get; set; } // 새로운 비밀번호
 
         [Required(ErrorMessage = "기존 비밀번호를 입력해주세요.")]

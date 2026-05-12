@@ -85,7 +85,10 @@ namespace TeamMatching.Web.Services
                 user.Nickname = request.Nickname;
                 user.Bio = request.Bio;
                 user.ProfileImageUrl = request.ProfileImageUrl;
-                user.PasswordHash = request.NewPassword;
+                if (!string.IsNullOrEmpty(request.NewPassword))
+                {
+                    user.PasswordHash = request.NewPassword;
+                }
                 user.UpdatedAt = DateTime.Now;
 
                 if (request.SelectedTagIds != null && request.SelectedTagIds.Any())
