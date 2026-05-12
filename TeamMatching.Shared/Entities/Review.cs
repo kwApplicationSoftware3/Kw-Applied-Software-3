@@ -36,10 +36,6 @@ namespace TeamMatching.Shared.Entities
         [Range(1, 5)]
         public float CommunicationScore { get; set; } // 소통 점수 (1~5)
 
-        public string? Comment { get; set; } // 상세 평가 내용
-
-        public bool IsHidden { get; set; } = false; // 관리자 숨김 여부
-
         public DateTime CreatedAt { get; set; } = DateTime.Now; // 평가 작성 일시
     }
 }

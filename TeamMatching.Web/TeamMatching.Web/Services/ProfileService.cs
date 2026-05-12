@@ -77,10 +77,17 @@ namespace TeamMatching.Web.Services
                     return new UpdateProfileResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
                 }
                 
+                if (request.OldPassword!=user.PasswordHash)
+                {
+                    return new UpdateProfileResponse { IsSuccess = false, Message = "기존 비밀번호가 일치하지 않습니다." };
+                }
+
                 user.Nickname = request.Nickname;
                 user.Bio = request.Bio;
-                user.ProfileImageUrl = request.profileImageUrl;
+                user.ProfileImageUrl = request.ProfileImageUrl;
+                user.PasswordHash = request.NewPassword;
                 user.UpdatedAt = DateTime.Now;
+
                 if (request.SelectedTagIds != null && request.SelectedTagIds.Any())
                 {
                     user.UserTags.Clear();
