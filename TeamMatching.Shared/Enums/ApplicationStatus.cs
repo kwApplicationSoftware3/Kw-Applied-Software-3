@@ -7,3 +7,4 @@ namespace TeamMatching.Shared.Enums
         Rejected = 2    // 거절
     }
 }
+
