@@ -20,6 +20,8 @@ namespace TeamMatching.Web.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<UserTag> UserTags { get; set; }
         public DbSet<PostTag> PostTags { get; set; }
+        public DbSet<TeamPost> TeamPosts { get; set; }
+        public DbSet<TeamPostComment> TeamPostComments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
