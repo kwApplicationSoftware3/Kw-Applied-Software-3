@@ -8,7 +8,7 @@ using TeamMatching.Web.Services;
 namespace TeamMatching.Web.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] // 최종 오픈되는 기본 백엔드 API 루트 도메인 주소: /api/teams
+    [Route("api/[controller]")] // /api/teams
     public class TeamsController : ControllerBase
     {
         private readonly ITeamsService _teamsService;
@@ -47,7 +47,7 @@ namespace TeamMatching.Web.Controllers
         }
         // 팀명 변경 API 엔드포인트
         [Authorize]
-        [HttpPut("{teamId}/name")]
+        [HttpPut("{teamId}")]
         public async Task<ActionResult<UpdateTeamNameResponse>> UpdateTeamName(int teamId, [FromBody] UpdateTeamNameRequest request)
         {
             // 1. DTO 어노테이션 기반 입력 서식 자동 검증 (글자수 제한 등)
@@ -110,6 +110,7 @@ namespace TeamMatching.Web.Controllers
             // 권한이 없거나 저장에 실패한 경우
             return BadRequest(result);
         }
+        // 팀 게시글 수정
         [Authorize]
         [HttpPut("{teamId}/posts/{postId}")]
         public async Task<ActionResult<UpdateTeamPostResponse>> UpdateTeamPost(int teamId, int postId, [FromBody] UpdateTeamPostRequest request)
@@ -141,6 +142,7 @@ namespace TeamMatching.Web.Controllers
 
             return BadRequest(result);
         }
+        // 팀 게시글 삭제
         [Authorize]
         [HttpDelete("{teamId}/posts/{postId}")]
         public async Task<ActionResult<DeleteTeamPostResponse>> DeleteTeamPost(int teamId, int postId)
@@ -168,6 +170,7 @@ namespace TeamMatching.Web.Controllers
             // 4. 실패 처리 응답
             return BadRequest(result);
         }
+        //팀 게시글 조회
         [Authorize]
         [HttpGet("{teamId}/posts/{postId}")]
         public async Task<ActionResult<GetTeamPostDetailResponse>> GetTeamPostDetail(int teamId, int postId)
@@ -195,8 +198,9 @@ namespace TeamMatching.Web.Controllers
             // 부정한 경로 우회 접근자 필터링 결과 반환
             return BadRequest(result);
         }
+        // 댓글 작성
         [Authorize]
-        [HttpPost("{teamId}/posts/{postId}/comments")]
+        [HttpPost("{teamId}/posts/{postId}")]
         public async Task<ActionResult<CreateTeamPostCommentResponse>> CreateTeamPostComment(int teamId, int postId, [FromBody] CreateTeamPostCommentRequest request)
         {
             // 1. 모델 유효성 검증 (빈 문자열, 500자 초과 방지)
@@ -226,6 +230,7 @@ namespace TeamMatching.Web.Controllers
 
             return BadRequest(result);
         }
+        // 프로젝트 종료
         [Authorize]
         [HttpDelete("{teamId}")]
         public async Task<ActionResult<EndProjectResponse>> EndProject(int teamId)
@@ -252,8 +257,9 @@ namespace TeamMatching.Web.Controllers
             // 권한 부족이나 잘못된 접근일 경우 400 Bad Request 반환
             return BadRequest(result);
         }
+        // 팀원 역할 변경
         [Authorize]
-        [HttpPost("{teamId}/roles")]
+        [HttpPost("{teamId}/team-role-update")]
         public async Task<ActionResult<UpdateTeamRolesResponse>> UpdateTeamRoles(int teamId, [FromBody] UpdateTeamRolesRequest request)
         {
             // 1. 모델 유효성 및 빈 배열 전송 방어

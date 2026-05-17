@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TeamMatching.Web.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class first : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -193,9 +193,6 @@ namespace TeamMatching.Web.Migrations
                     ReliabilityScore = table.Column<float>(type: "float", nullable: false),
                     ContributionScore = table.Column<float>(type: "float", nullable: false),
                     CommunicationScore = table.Column<float>(type: "float", nullable: false),
-                    Comment = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsHidden = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -275,6 +272,63 @@ namespace TeamMatching.Web.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "TeamPosts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TeamId = table.Column<int>(type: "int", nullable: false),
+                    AuthorId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeamPosts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TeamPosts_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "TeamPostComments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TeamPostId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Content = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeamPostComments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TeamPostComments_TeamPosts_TeamPostId",
+                        column: x => x.TeamPostId,
+                        principalTable: "TeamPosts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TeamPostComments_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Name" },
@@ -339,6 +393,21 @@ namespace TeamMatching.Web.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TeamPostComments_TeamPostId",
+                table: "TeamPostComments",
+                column: "TeamPostId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamPostComments_UserId",
+                table: "TeamPostComments",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamPosts_TeamId",
+                table: "TeamPosts",
+                column: "TeamId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Teams_PostId",
                 table: "Teams",
                 column: "PostId");
@@ -371,13 +440,19 @@ namespace TeamMatching.Web.Migrations
                 name: "TeamMembers");
 
             migrationBuilder.DropTable(
+                name: "TeamPostComments");
+
+            migrationBuilder.DropTable(
                 name: "UserTags");
 
             migrationBuilder.DropTable(
-                name: "Teams");
+                name: "TeamPosts");
 
             migrationBuilder.DropTable(
                 name: "Tags");
+
+            migrationBuilder.DropTable(
+                name: "Teams");
 
             migrationBuilder.DropTable(
                 name: "Posts");

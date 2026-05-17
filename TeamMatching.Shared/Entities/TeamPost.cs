@@ -22,7 +22,8 @@ namespace TeamMatching.Shared.Entities
 
         //본인 글 여부(isMyPost)를 판단하기 위해 작성자 유저 ID를 추가합니다.
         [Required]
-        public int UserId { get; set; }
+        public int AuthorId { get; set; }
+        
         [Required]
         [MaxLength(100)]
         public string Title { get; set; } = string.Empty; // 게시글 제목
@@ -31,5 +32,10 @@ namespace TeamMatching.Shared.Entities
         public string Content { get; set; } = string.Empty; // 게시글 본문 상세 내용
 
         public DateTime CreatedAt { get; set; } = DateTime.Now; // 게시글 작성 일시
+
+        public DateTime? UpdatedAt { get; set; } // 수정 일시
+
+        // 관계 설정
+        public ICollection<TeamPostComment> TeamPostComments { get; set; } = new List<TeamPostComment>(); // 게시글에 달린 댓글 목록
     }
 }

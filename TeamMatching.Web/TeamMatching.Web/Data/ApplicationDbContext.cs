@@ -98,6 +98,20 @@ namespace TeamMatching.Web.Data
                 new Tag { Id = 9, Name = "MySQL" },
                 new Tag { Id = 10, Name = "UI/UX" }
             );
+
+            // TeamPost와 TeamPostComment의 일대다 관계 명시
+            modelBuilder.Entity<TeamPostComment>()
+                .HasOne(tc => tc.TeamPost)
+                .WithMany(tp => tp.TeamPostComments)
+                .HasForeignKey(tc => tc.TeamPostId)
+                .OnDelete(DeleteBehavior.Cascade); // 게시글 삭제 시 댓글도 삭제
+
+            // Team과 TeamPost의 일대다 관계 명시
+            modelBuilder.Entity<TeamPost>()
+                .HasOne(tp => tp.Team)
+                .WithMany(t => t.TeamPosts)
+                .HasForeignKey(tp => tp.TeamId)
+                .OnDelete(DeleteBehavior.Cascade); // 팀 삭제 시 팀 게시글도 삭제
         }
     }
 }

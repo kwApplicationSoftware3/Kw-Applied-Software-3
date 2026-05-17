@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace TeamMatching.Web.Services
                 // 1. main 브랜치의 Team 엔티티 규격에 정확히 맞추어 소속 팀원(TeamMembers) 컬렉션을 함께 즉시 로드(Include)합니다.
                 var team = await _context.Teams
                     .Include(t => t.TeamMembers)
+                    .Include(t => t.TeamPosts)
                     .FirstOrDefaultAsync(t => t.Id == teamId);
 
                 // 2. 예외 방어선: 데이터베이스에 전달된 팀 ID 정보 자체가 검색되지 않는 비정상적인 상황 케어
@@ -33,8 +35,7 @@ namespace TeamMatching.Web.Services
                     return new GetTeamMainResponse
                     {
                         IsSuccess = false,
-                        Message = "존재하지 않거나 프로젝트가 종료되어 파기된 팀 공간입니다.",
-                        Data = null
+                        Message = "존재하지 않거나 프로젝트가 종료되어 파기된 팀 공간입니다."
                     };
                 }
 
@@ -46,8 +47,7 @@ namespace TeamMatching.Web.Services
                     return new GetTeamMainResponse
                     {
                         IsSuccess = false,
-                        Message = "귀하는 이 팀의 공식 소속 팀원이 아닙니다. 메인화면 열람 권한이 원천 차단되었습니다.",
-                        Data = null
+                        Message = "귀하는 이 팀의 공식 소속 팀원이 아닙니다. 메인화면 열람 권한이 원천 차단되었습니다."
                     };
                 }
 
@@ -55,33 +55,30 @@ namespace TeamMatching.Web.Services
                 var membersList = team.TeamMembers.Select(tm => new TeamMemberRoleDto
                 {
                     TeamMemberId = tm.UserId, // 프론트엔드가 프로필 조회 등으로 연동하기 편하도록 UserId값을 팀원 식별자로 바인딩
+                    Nickname = tm.User.Nickname, // 닉네임
                     Role = tm.Role,           // main 브랜치의 팀장/팀원 권한 이넘 코드 매핑
                     Position = tm.Position    // main 브랜치의 담당 직무 상세 텍스트(백엔드, 프론트엔드 등) 매핑
                 }).ToList();
 
                 // 5. 신규 확장한 팀 내부 게시판 전용 테이블(TeamPosts)에서 해당 팀으로 작성된 글을 필터링하여 수집합니다.
-                var postsList = await _context.TeamPosts
-                    .Where(tp => tp.TeamId == teamId)
-                    .OrderByDescending(tp => tp.CreatedAt) // 가장 최근에 올린 중요한 공지사항이나 일정 피드가 UI 상단에 배치되도록 정렬
+                var postsList = team.TeamPosts
+                    .OrderByDescending(tp => tp.CreatedAt) // 가장 최근에 올린 중요한 공지사항이나 일정 피드가 UI상단에 배치되도록 정렬
                     .Select(tp => new TeamPostListItemDto
                     {
                         TeamPostId = tp.Id, // 게시글 상세 열람용 ID 매핑
                         Title = tp.Title,   // 공지 글 제목 매핑
                         CreatedAt = tp.CreatedAt // 작성 일시 매핑
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 // 6. 명세서에 기재된 최종 포맷 양식인 단일 "data" 래퍼 구조체 내부에 모든 서브 리스트를 탑재하여 최종 반환 진행
                 return new GetTeamMainResponse
                 {
                     IsSuccess = true,
                     Message = "팀 메인화면을 불러왔습니다.",
-                    Data = new TeamMainDataDto
-                    {
-                        TeamName = team.TeamName, // main 브랜치의 실제 원본 DB 필드명인 'TeamName' 매핑 완비
-                        TeamPosts = postsList,
-                        TeamMemberRoles = membersList
-                    }
+                    TeamName = team.TeamName, // main 브랜치의 실제 원본 DB 필드명인 'TeamName' 매핑 완비
+                    TeamPosts = postsList,
+                    TeamMemberRoles = membersList
                 };
             }
             catch (Exception ex)
@@ -90,8 +87,7 @@ namespace TeamMatching.Web.Services
                 return new GetTeamMainResponse
                 {
                     IsSuccess = false,
-                    Message = $"팀 대시보드 쿼리 연동 중 시스템 서버 에러가 발생했습니다: {ex.Message}",
-                    Data = null
+                    Message = $"팀 대시보드 쿼리 연동 중 시스템 서버 에러가 발생했습니다: {ex.Message}"
                 };
             }
         }
@@ -164,6 +160,7 @@ namespace TeamMatching.Web.Services
                 var newPost = new TeamPost
                 {
                     TeamId = teamId,
+                    AuthorId = currentUserId, // 추가: 작성자 ID 저장
                     Title = request.Title,
                     Content = request.Content,
                     CreatedAt = DateTime.Now
@@ -205,6 +202,8 @@ namespace TeamMatching.Web.Services
                     };
                 }
 
+
+
                 // 2. 대상 게시글 조회: 파라미터로 받은 팀 ID와 게시글 ID가 모두 일치하는 글을 찾습니다.
                 var post = await _context.TeamPosts
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
@@ -217,11 +216,17 @@ namespace TeamMatching.Web.Services
                         Message = "존재하지 않거나 이미 삭제된 게시글입니다."
                     };
                 }
+                
+                // 작성자인지 확인
+                if (post.AuthorId != currentUserId)
+                {
+                    return new UpdateTeamPostResponse { IsSuccess = false, Message = "본인이 작성한 글만 수정할 수 있습니다." };
+                }
 
                 // 3. 내용 업데이트 및 DB 저장
                 post.Title = request.Title;
                 post.Content = request.Content;
-                // 참고: TeamPost 엔티티에 UpdatedAt 속성이 없으므로 CreatedAt은 그대로 유지됩니다.
+                post.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -257,6 +262,7 @@ namespace TeamMatching.Web.Services
                     };
                 }
 
+               
                 // 2. 삭제할 게시글 대상 조회
                 var post = await _context.TeamPosts
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
@@ -270,6 +276,13 @@ namespace TeamMatching.Web.Services
                         Message = "존재하지 않거나 이미 삭제된 게시글입니다."
                     };
                 }
+
+                // 작성자인지 확인
+                if (post.AuthorId != currentUserId)
+                {
+                    return new DeleteTeamPostResponse { IsSuccess = false, Message = "본인이 작성한 글만 삭제할 수 있습니다." };
+                }
+
 
                 // 4. DB에서 데이터 삭제 및 변경사항 저장
                 _context.TeamPosts.Remove(post);
@@ -303,13 +316,13 @@ namespace TeamMatching.Web.Services
                     return new GetTeamPostDetailResponse
                     {
                         IsSuccess = false,
-                        Message = "소속 팀원만 외부 비공개 게시글을 열람할 수 있습니다.",
-                        Data = null
+                        Message = "소속 팀원만 외부 비공개 게시글을 열람할 수 있습니다."
                     };
                 }
 
                 // 2. 타겟 게시글 단건 정밀 쿼리 조회
                 var post = await _context.TeamPosts
+                    .Include(tp => tp.TeamPostComments)
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
 
                 if (post == null)
@@ -317,37 +330,29 @@ namespace TeamMatching.Web.Services
                     return new GetTeamPostDetailResponse
                     {
                         IsSuccess = false,
-                        Message = "존재하지 않거나 작성자에 의해 삭제된 게시글입니다.",
-                        Data = null
+                        Message = "존재하지 않거나 작성자에 의해 삭제된 게시글입니다."
                     };
                 }
 
                 // 3. 해당 게시글에 기재된 댓글 목록(TeamPostComments)을 작성자(User) 정보와 조인(Include)하여 조회 정렬
-                var commentsList = await _context.TeamPostComments
-                    .Where(tc => tc.TeamPostId == postId)
-                    .Include(tc => tc.User) // 댓글 작성자의 Nickname을 긁어오기 위한 연동
-                    .OrderBy(tc => tc.CreatedAt) // 댓글은 등록된 순서대로 정방향 정렬(과거순)하여 타임라인 형성
-                    .Select(tc => new TeamPostCommentDto
-                    {
-                        Nickname = tc.User != null ? tc.User.Nickname : "알 수 없는 사용자",
-                        Content = tc.Content,
-                        CreatedAt = tc.CreatedAt
-                    })
-                    .ToListAsync();
+                var commentsList = post.TeamPostComments.Select(tpc => new TeamPostCommentDto
+                {
+                    Nickname = tpc.User != null ? tpc.User.Nickname : "알 수 없는 사용자",
+                    Content = tpc.Content,
+                    CreatedAt = tpc.CreatedAt
+                }).ToList();
+             
 
                 // 4. 명세서 청사진 규격 객체 조합 단계를 실행하여 리턴
                 return new GetTeamPostDetailResponse
                 {
                     IsSuccess = true,
                     Message = "게시글 상세 정보를 성공적으로 불러왔습니다.",
-                    Data = new TeamPostDetailDataDto
-                    {
-                        Title = post.Title,
-                        Content = post.Content,
-                        // 현재 조회 요청자 세션 유저 ID와 글 엔티티에 기록된 UserId 소유권자가 완벽 일치하면 true 반환
-                        IsMyPost = post.UserId == currentUserId,
-                        Comments = commentsList
-                    }
+                    Title = post.Title,
+                    Content = post.Content,
+                    // 현재 조회 요청자 세션 유저 ID와 글 엔티티에 기록된 UserId 소유권자가 완벽 일치하면 true 반환
+                    IsMyPost = post.AuthorId == currentUserId,
+                    Comments = commentsList
                 };
             }
             catch (Exception ex)
@@ -355,8 +360,7 @@ namespace TeamMatching.Web.Services
                 return new GetTeamPostDetailResponse
                 {
                     IsSuccess = false,
-                    Message = $"상세 정보를 불러오는 중 치명적인 서버 오류 발생: {ex.Message}",
-                    Data = null
+                    Message = $"상세 정보를 불러오는 중 치명적인 서버 오류 발생: {ex.Message}"
                 };
             }
         }
@@ -435,8 +439,11 @@ namespace TeamMatching.Web.Services
                     };
                 }
 
-                // 2. 대상 팀(프로젝트) 존재 여부 확인
-                var team = await _context.Teams.FindAsync(teamId);
+                // 2. 대상 팀(프로젝트) 존재 여부 확인 및 원본 모집글 로드
+                var team = await _context.Teams
+                    .Include(t => t.Post)
+                    .FirstOrDefaultAsync(t => t.Id == teamId);
+                    
                 if (team == null)
                 {
                     return new EndProjectResponse
@@ -446,12 +453,11 @@ namespace TeamMatching.Web.Services
                     };
                 }
 
-                // 3. 프로젝트 상태 종료 처리 (예시: 활성화 플래그 해제 또는 상태 값 변경)
-                // 만약 엔티티에 속성이 없다면 구현 상황에 맞게 코드를 조정하세요.
-                // 예: team.IsActive = false; 또는 _context.Teams.Remove(team); (Hard Delete일 경우)
-
-                // 여기서는 안전하게 상태를 비활성화(종료) 처리하는 예시를 듭니다.
-                // _context.Teams.Remove(team); // 진짜 삭제를 원하시면 이 주석을 해제하세요.
+                // 3. 프로젝트 상태를 Completed로 변경
+                if (team.Post != null)
+                {
+                    team.Post.Status = PostStatus.Completed;
+                }
 
                 await _context.SaveChangesAsync();
 

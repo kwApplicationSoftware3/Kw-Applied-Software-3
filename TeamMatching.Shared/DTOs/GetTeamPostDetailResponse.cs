@@ -15,18 +15,7 @@ namespace TeamMatching.Shared.DTOs
         // 댓글이 작성된 일시
         public DateTime CreatedAt { get; set; }
     }
-    public class TeamPostDetailDataDto
-    {
-       
-        // 게시글 제목
-        public string Title { get; set; } = string.Empty;
-        // 게시글 본문 상세 내용
-        public string Content { get; set; } = string.Empty;
-        // 현재 로그인하여 글을 읽고 있는 세션 유저가 이 글의 원래 작성자인지 여부 플래그
-        public bool IsMyPost { get; set; }
-        // 이 게시글에 등록된 전체 댓글 리스트 목록 배열
-        public List<TeamPostCommentDto> Comments { get; set; } = new();
-    }
+ 
     public class GetTeamPostDetailResponse
     {
         // API 요청 처리 성공 여부
@@ -34,6 +23,12 @@ namespace TeamMatching.Shared.DTOs
         // 처리 결과 메시지 ("게시글 상세 정보를 성공적으로 불러왔습니다.")
         public string Message { get; set; } = string.Empty;
         // 핵심 상세 정보 데이터 오브젝트
-        public TeamPostDetailDataDto? Data { get; set; }
+        public string Title { get; set; } = string.Empty;
+        // 게시글 본문 상세 내용
+        public string Content { get; set; } = string.Empty;
+        // 현재 로그인하여 글을 읽고 있는 세션 유저가 이 글의 원래 작성자인지 여부 플래그
+        public bool IsMyPost { get; set; }
+        // 이 게시글에 등록된 전체 댓글 리스트 목록 배열
+        public List<TeamPostCommentDto> Comments { get; set; } = new();
     }
 }

@@ -2,6 +2,7 @@
 using TeamMatching.Shared.DTOs;
 using TeamMatching.Shared.Entities;
 using TeamMatching.Web.Data;
+using TeamMatching.Shared.Enums;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -80,7 +81,9 @@ namespace TeamMatching.Web.Services
                         Summary = p.Summary,
                         CurrentMembers = p.CurrentMembers,
                         MaxMembers = p.MaxMembers,
-                        CreatedAt = p.CreatedAt
+                        CreatedAt = p.CreatedAt,
+                        Tags = p.PostTags.Select(pt => pt.Tag!.Name).ToList(),
+                        Status = p.Status
                     })
                     .ToListAsync();
 
@@ -162,7 +165,8 @@ namespace TeamMatching.Web.Services
                     Message = a.Message ?? string.Empty,
                     // User의 태그 리스트에서 ID만 추출
                     SelectedTagIds = a.User?.UserTags.Select(ut => ut.TagId).ToList() ?? new List<int>(),
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    Status = a.Status
                 }).ToList();
 
                 return new GetApplicationsResponse
@@ -312,6 +316,48 @@ namespace TeamMatching.Web.Services
             catch (Exception ex)
             {
                 return new UpdatePostResponse { IsSuccess = false, Message = $"수정 중 오류 발생: {ex.Message}" };
+            }
+        }
+        public async Task<AcceptMemberResponse> AcceptMemberAsync(int postId, int currentUserId, AcceptMemberRequest request)
+        {
+            try
+            {
+                var application = await _context.Applications
+                    .Include(a => a.Post)
+                    .FirstOrDefaultAsync(a => a.Id == request.ApplicationId && a.PostId == postId);
+
+                if (application == null)
+                {
+                    return new AcceptMemberResponse { IsSuccess = false, Message = "지원서를 찾을 수 없습니다." };
+                }
+
+                if (application.Post == null || application.Post.AuthorId != currentUserId)
+                {
+                    return new AcceptMemberResponse { IsSuccess = false, Message = "본인이 작성한 글의 지원서만 처리할 수 있습니다." };
+                }
+                
+                if (request.Status == ApplicationStatus.Accepted)
+                {
+                    // 현재 모집 인원 증가
+                    if (application.Post != null)
+                    {
+                        if (application.Post.CurrentMembers >= application.Post.MaxMembers)
+                        {
+                            return new AcceptMemberResponse { IsSuccess = false, Message = "모집 인원이 가득 찼습니다." };
+                        }
+                        application.Post.CurrentMembers++;
+                    }
+                }
+
+                application.Status = request.Status;
+                await _context.SaveChangesAsync();
+                
+                string actionStr = request.Status == ApplicationStatus.Accepted ? "수락" : "거절";
+                return new AcceptMemberResponse { IsSuccess = true, Message = $"지원서를 {actionStr}했습니다." };
+            }
+            catch (Exception ex)
+            {
+                return new AcceptMemberResponse { IsSuccess = false, Message = $"지원서 수락/거절 중 오류 발생: {ex.Message}" };
             }
         }
     }

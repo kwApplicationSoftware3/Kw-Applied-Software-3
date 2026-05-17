@@ -25,5 +25,7 @@ namespace TeamMatching.Web.Services
         Task<ApplyPostResponse> ApplyPostAsync(int postId, int userId, ApplyPostRequest request);
         // 기존 모집글을 수정합니다. (작성자 본인만 가능)
         Task<UpdatePostResponse> UpdatePostAsync(int postId, int userId, UpdatePostRequest request);
+        // 팀원을 수락합니다.
+        Task<AcceptMemberResponse> AcceptMemberAsync(int postId, int currentUserId, AcceptMemberRequest request);
     }
 }

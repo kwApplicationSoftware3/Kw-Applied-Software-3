@@ -23,5 +23,6 @@ namespace TeamMatching.Shared.Entities
 
         // 관계 설정
         public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>(); // 소속 팀원 목록
+        public ICollection<TeamPost> TeamPosts { get; set; } = new List<TeamPost>(); // 팀 게시글 목록
     }
 }

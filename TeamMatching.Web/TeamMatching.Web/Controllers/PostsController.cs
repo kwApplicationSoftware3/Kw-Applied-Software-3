@@ -188,5 +188,31 @@ namespace TeamMatching.Web.Controllers
 
             return BadRequest(result);
         }
+
+        // 지원서 수락/거절 API
+        [Authorize]
+        [HttpPost("{id}/applications")]
+        public async Task<ActionResult<AcceptMemberResponse>> AcceptMember(int id, [FromBody] AcceptMemberRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AcceptMemberResponse { IsSuccess = false, Message = "입력 데이터가 올바르지 않습니다." });
+            }
+
+            var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (idClaim == null || !int.TryParse(idClaim.Value, out var userId))
+            {
+                return Unauthorized(new AcceptMemberResponse { IsSuccess = false, Message = "인증 정보가 유효하지 않습니다." });
+            }
+
+            var result = await _postsService.AcceptMemberAsync(id, userId, request);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

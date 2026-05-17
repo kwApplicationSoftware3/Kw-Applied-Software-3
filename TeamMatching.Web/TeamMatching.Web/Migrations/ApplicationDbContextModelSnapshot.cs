@@ -288,6 +288,73 @@ namespace TeamMatching.Web.Migrations
                     b.ToTable("TeamMembers");
                 });
 
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("TeamPosts");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPostComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TeamPostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamPostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TeamPostComments");
+                });
+
             modelBuilder.Entity("TeamMatching.Shared.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -464,6 +531,36 @@ namespace TeamMatching.Web.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.HasOne("TeamMatching.Shared.Entities.Team", "Team")
+                        .WithMany("TeamPosts")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPostComment", b =>
+                {
+                    b.HasOne("TeamMatching.Shared.Entities.TeamPost", "TeamPost")
+                        .WithMany("TeamPostComments")
+                        .HasForeignKey("TeamPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TeamMatching.Shared.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeamPost");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TeamMatching.Shared.Entities.UserTag", b =>
                 {
                     b.HasOne("TeamMatching.Shared.Entities.Tag", "Tag")
@@ -500,6 +597,13 @@ namespace TeamMatching.Web.Migrations
             modelBuilder.Entity("TeamMatching.Shared.Entities.Team", b =>
                 {
                     b.Navigation("TeamMembers");
+
+                    b.Navigation("TeamPosts");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.Navigation("TeamPostComments");
                 });
 
             modelBuilder.Entity("TeamMatching.Shared.Entities.User", b =>

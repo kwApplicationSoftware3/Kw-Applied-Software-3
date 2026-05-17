@@ -12,8 +12,8 @@ using TeamMatching.Web.Data;
 namespace TeamMatching.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260510163307_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260517135554_first")]
+    partial class first
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -134,9 +134,6 @@ namespace TeamMatching.Web.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Comment")
-                        .HasColumnType("longtext");
-
                     b.Property<float>("CommunicationScore")
                         .HasColumnType("float");
 
@@ -145,9 +142,6 @@ namespace TeamMatching.Web.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("PostId")
                         .HasColumnType("int");
@@ -295,6 +289,73 @@ namespace TeamMatching.Web.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("TeamMembers");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("TeamPosts");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPostComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TeamPostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamPostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TeamPostComments");
                 });
 
             modelBuilder.Entity("TeamMatching.Shared.Entities.User", b =>
@@ -473,6 +534,36 @@ namespace TeamMatching.Web.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.HasOne("TeamMatching.Shared.Entities.Team", "Team")
+                        .WithMany("TeamPosts")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPostComment", b =>
+                {
+                    b.HasOne("TeamMatching.Shared.Entities.TeamPost", "TeamPost")
+                        .WithMany("TeamPostComments")
+                        .HasForeignKey("TeamPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TeamMatching.Shared.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeamPost");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TeamMatching.Shared.Entities.UserTag", b =>
                 {
                     b.HasOne("TeamMatching.Shared.Entities.Tag", "Tag")
@@ -509,6 +600,13 @@ namespace TeamMatching.Web.Migrations
             modelBuilder.Entity("TeamMatching.Shared.Entities.Team", b =>
                 {
                     b.Navigation("TeamMembers");
+
+                    b.Navigation("TeamPosts");
+                });
+
+            modelBuilder.Entity("TeamMatching.Shared.Entities.TeamPost", b =>
+                {
+                    b.Navigation("TeamPostComments");
                 });
 
             modelBuilder.Entity("TeamMatching.Shared.Entities.User", b =>
