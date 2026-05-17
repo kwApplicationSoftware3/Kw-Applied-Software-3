@@ -40,7 +40,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IMyActivitiesService, MyActivitiesService>();
-
+builder.Services.AddScoped<ITeamsService, TeamsService>();
 var JWTString = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "YourSuperSecretKeyForJWTAuth2026!TeamMatching";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TeamMatchingWeb";
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TeamMatchingUsers";
