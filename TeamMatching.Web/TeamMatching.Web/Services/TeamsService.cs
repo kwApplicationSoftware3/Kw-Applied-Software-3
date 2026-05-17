@@ -26,6 +26,7 @@ namespace TeamMatching.Web.Services
                 // 1. main 브랜치의 Team 엔티티 규격에 정확히 맞추어 소속 팀원(TeamMembers) 컬렉션을 함께 즉시 로드(Include)합니다.
                 var team = await _context.Teams
                     .Include(t => t.TeamMembers)
+                         .ThenInclude(tm => tm.User)
                     .Include(t => t.TeamPosts)
                     .FirstOrDefaultAsync(t => t.Id == teamId);
 
@@ -96,27 +97,26 @@ namespace TeamMatching.Web.Services
         {
             try
             {
-                // 1. main 브랜치 사양에 맞춰 팀 정보와 소속 팀원 목록을 함께 DB에서 로드합니다.
-                var team = await _context.Teams
-                    .Include(t => t.TeamMembers)
-                    .FirstOrDefaultAsync(t => t.Id == teamId);
+                // 1. 권한 검증: 현재 요청을 보낸 사용자가 이 팀의 팀장(Leader)인지 단일 쿼리로 확인합니다.
+                bool isLeader = await _context.TeamMembers
+                    .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == currentUserId && tm.Role == TeamRole.Leader);
 
+                if (!isLeader)
+                {
+                    return new UpdateTeamNameResponse
+                    {
+                        IsSuccess = false,
+                        Message = "팀 이름은 팀장만 변경할 수 있는권한입니다." 
+                    };
+                }
+
+                // 2. 팀 정보를 로드합니다.
+                var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+
+                // 3. 직무 권한 검증: 팀 소속이 맞더라도 '팀장(Leader)'이 아니라면 이름 수정을 거부합니다.
                 if (team == null)
                 {
                     return new UpdateTeamNameResponse { IsSuccess = false, Message = "존재하지 않는 팀입니다." };
-                }
-
-                // 2. 권한 검증: 현재 요청을 보낸 사용자가 이 팀의 멤버인지 검색합니다.
-                var memberInfo = team.TeamMembers.FirstOrDefault(tm => tm.UserId == currentUserId);
-                if (memberInfo == null)
-                {
-                    return new UpdateTeamNameResponse { IsSuccess = false, Message = "해당 팀의 소속원이 아닙니다. 수정 권한이 없습니다." };
-                }
-
-                // 3. 직무 권한 검증: 팀 소속이 맞더라도 '팀장(Leader)'이 아니라면 이름 수정을 거부합니다.
-                if (memberInfo.Role != TeamRole.Leader)
-                {
-                    return new UpdateTeamNameResponse { IsSuccess = false, Message = "팀 이름은 팀장만 변경할 수 있는 권한입니다." };
                 }
 
                 // 4. 안전하게 검증이 완료되었으므로 main 브랜치 Team.cs의 실제 필드명인 'TeamName'에 새 값을 덮어씁니다.
@@ -189,22 +189,7 @@ namespace TeamMatching.Web.Services
         {
             try
             {
-                // 1. 권한 검증: 현재 유저가 이 팀의 소속원인지 확인합니다. (외부인 수정 원천 차단)
-                bool isMember = await _context.TeamMembers
-                    .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == currentUserId);
-
-                if (!isMember)
-                {
-                    return new UpdateTeamPostResponse
-                    {
-                        IsSuccess = false,
-                        Message = "해당 팀의 소속원이 아니므로 게시글을 수정할 권한이 없습니다."
-                    };
-                }
-
-
-
-                // 2. 대상 게시글 조회: 파라미터로 받은 팀 ID와 게시글 ID가 모두 일치하는 글을 찾습니다.
+                // 1. 대상 게시글 조회: 파라미터로 받은 팀 ID와 게시글 ID가 모두 일치하는 글을 찾습니다.
                 var post = await _context.TeamPosts
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
 
@@ -249,21 +234,7 @@ namespace TeamMatching.Web.Services
         {
             try
             {
-                // 1. 소속 및 권한 검증: 현재 유저가 해당 팀의 멤버인지 확인
-                bool isMember = await _context.TeamMembers
-                    .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == currentUserId);
-
-                if (!isMember)
-                {
-                    return new DeleteTeamPostResponse
-                    {
-                        IsSuccess = false,
-                        Message = "해당 팀의 소속원이 아니므로 게시글을 삭제할 권한이 없습니다."
-                    };
-                }
-
-               
-                // 2. 삭제할 게시글 대상 조회
+                // 1. 삭제할 게시글 대상 조회
                 var post = await _context.TeamPosts
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
 
@@ -323,6 +294,7 @@ namespace TeamMatching.Web.Services
                 // 2. 타겟 게시글 단건 정밀 쿼리 조회
                 var post = await _context.TeamPosts
                     .Include(tp => tp.TeamPostComments)
+                        .ThenInclude(tpc => tpc.User)
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
 
                 if (post == null)
@@ -335,7 +307,9 @@ namespace TeamMatching.Web.Services
                 }
 
                 // 3. 해당 게시글에 기재된 댓글 목록(TeamPostComments)을 작성자(User) 정보와 조인(Include)하여 조회 정렬
-                var commentsList = post.TeamPostComments.Select(tpc => new TeamPostCommentDto
+                var commentsList = post.TeamPostComments
+                    .OrderBy(tpc => tpc.CreatedAt)
+                    .Select(tpc => new TeamPostCommentDto
                 {
                     Nickname = tpc.User != null ? tpc.User.Nickname : "알 수 없는 사용자",
                     Content = tpc.Content,
@@ -509,6 +483,16 @@ namespace TeamMatching.Web.Services
                         targetMember.Role = roleUpdate.Role; // 리더/멤버 권한 변경
                         targetMember.Position = roleUpdate.Position; // 백엔드/프론트엔드 등 직무 변경
                     }
+                }
+
+                // [중요] 역할 변경 후 팀장이 0명이 되는지 방어
+                if (!teamMembers.Any(tm => tm.Role == TeamRole.Leader))
+                {
+                    return new UpdateTeamRolesResponse
+                    {
+                        IsSuccess = false,
+                        Message = "최소 1명 이상의 팀장이 팀에 남아있어야 합니다."
+                    };
                 }
 
                 // 4. 모든 변경 사항을 트랜잭션으로 묶어 DB에 안전하게 커밋합니다.

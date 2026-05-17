@@ -336,6 +336,11 @@ namespace TeamMatching.Web.Services
                     return new AcceptMemberResponse { IsSuccess = false, Message = "본인이 작성한 글의 지원서만 처리할 수 있습니다." };
                 }
                 
+                if (application.Status != ApplicationStatus.Pending)
+                {
+                    return new AcceptMemberResponse { IsSuccess = false, Message = "이미 처리된 지원서입니다." };
+                }
+
                 if (request.Status == ApplicationStatus.Accepted)
                 {
                     // 현재 모집 인원 증가

@@ -23,6 +23,9 @@ namespace TeamMatching.Shared.Entities
         //본인 글 여부(isMyPost)를 판단하기 위해 작성자 유저 ID를 추가합니다.
         [Required]
         public int AuthorId { get; set; }
+
+        [ForeignKey("AuthorId")]
+        public User? Author { get; set; }
         
         [Required]
         [MaxLength(100)]
