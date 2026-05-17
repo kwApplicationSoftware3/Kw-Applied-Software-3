@@ -40,16 +40,12 @@ namespace TeamMatching.Shared.DTOs
     }
     public class GetTeamMainResponse
     {
-        /// 서버 비즈니스 로직 처리 성공 여부 플래그 
+        //서버 비즈니스 로직 처리 성공 여부 플래그 
         public bool IsSuccess { get; set; }
-        /// 서버의 가공 결과 안내 또는 검증 실패 사유 텍스트
+        // 서버의 가공 결과 안내 또는 검증 실패 사유 텍스트
         public string Message { get; set; } = string.Empty;
 
-        /// <summary>
-        /// API 명세서 양식 규격을 충족하기 위한 단일 "data" 래퍼 필드입니다.
-        /// 프론트엔드 참고: 화면 가운뎃값에 접근할 때 반드시 중 간 계층을 거쳐 호출해야 합니다. (예: `response.data.teamName`, `response.data.teamPosts`)
-        /// 비정상적인 접근(IsSuccess가 false)인 상황에서는 이 필드가 `null`로 반환되므로 UI단 NullReference 예외 처리에 주의하세요.
-        /// </summary>
+        // API 명세서 양식 규격을 충족하기 위한 단일 "data" 래퍼 필드
         public TeamMainDataDto? Data { get; set; }
     }
 }
