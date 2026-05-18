@@ -114,6 +114,7 @@ namespace TeamMatching.Web.Services
                 // 1. 게시글과 연관된 태그 정보를 DB에서 함께 불러옵니다.
                 var post = await _context.Posts
                     .Include(p => p.PostTags)
+                    .Include(p => p.Applications)
                     .FirstOrDefaultAsync(p => p.Id == postId);
 
                 // 2. 글이 없으면 실패 응답 반환
@@ -136,7 +137,8 @@ namespace TeamMatching.Web.Services
                     // 현재 접속한 유저 ID가 있고, 그 ID가 글 작성자 ID와 같다면 true
                     IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value,
                     CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt
+                    UpdatedAt = post.UpdatedAt,
+                    ApplicationCount = post.Applications.Count
                 };
             }
             catch (Exception ex)
