@@ -34,8 +34,6 @@ namespace TeamMatching.Shared.Entities
 
         public int CurrentMembers { get; set; } = 1; // 현재 모집 인원수
 
-        public string? ContactUrl { get; set; } // 오픈카톡 등 연락 링크
-
         public int ViewCount { get; set; } = 0; // 조회수
 
         public DateTime CreatedAt { get; set; } = DateTime.Now; // 작성 일시
