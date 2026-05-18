@@ -326,7 +326,9 @@ namespace TeamMatching.Web.Services
                     Content = post.Content,
                     // 현재 조회 요청자 세션 유저 ID와 글 엔티티에 기록된 UserId 소유권자가 완벽 일치하면 true 반환
                     IsMyPost = post.AuthorId == currentUserId,
-                    Comments = commentsList
+                    Comments = commentsList,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt
                 };
             }
             catch (Exception ex)

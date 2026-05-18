@@ -26,6 +26,9 @@ namespace TeamMatching.Shared.DTOs
         public string Title { get; set; } = string.Empty;
         // 게시글 본문 상세 내용
         public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } // 글 작성 일자
+        public DateTime? UpdatedAt { get; set; } // 글 수정 일자
+
         // 현재 로그인하여 글을 읽고 있는 세션 유저가 이 글의 원래 작성자인지 여부 플래그
         public bool IsMyPost { get; set; }
         // 이 게시글에 등록된 전체 댓글 리스트 목록 배열

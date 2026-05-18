@@ -134,7 +134,9 @@ namespace TeamMatching.Web.Services
                     // PostTags 배열에서 TagId 숫자만 뽑아서 리스트로 변환합니다.
                     SelectedTagIds = post.PostTags.Select(pt => pt.TagId).ToList(),
                     // 현재 접속한 유저 ID가 있고, 그 ID가 글 작성자 ID와 같다면 true
-                    IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value
+                    IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt
                 };
             }
             catch (Exception ex)

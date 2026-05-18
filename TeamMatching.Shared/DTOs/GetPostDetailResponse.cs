@@ -15,6 +15,8 @@ namespace TeamMatching.Shared.DTOs
         public int MaxMembers { get; set; }                    // 최대 모집 인원수
         public List<int> SelectedTagIds { get; set; } = new(); // 선택된 기술 스택(태그) ID 목록
         public string Content { get; set; } = string.Empty;    // 글 본문 상세 내용
+        public DateTime CreatedAt { get; set; } // 글 작성 일자
+        public DateTime? UpdatedAt { get; set; } // 글 수정 일자
         public bool IsMyPost { get; set; }                     // 접속한 유저가 이 글의 작성자인지 여부 (true면 수정/삭제 버튼 노출)
     }
 }
