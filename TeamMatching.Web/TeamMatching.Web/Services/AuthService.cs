@@ -9,6 +9,7 @@ using TeamMatching.Shared.Entities;
 using TeamMatching.Web.Data;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using BCrypt.Net;
 
 namespace TeamMatching.Web.Services
 {
@@ -34,12 +35,13 @@ namespace TeamMatching.Web.Services
                 {
                     return new RegisterResponse { IsSuccess = false, Message = "이미 가입된 이메일입니다." };
                 }
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
                 // 2. 유저 엔티티 생성 (비밀번호 해싱은 추후 보안 강화 시 적용)
                 var user = new User
                 {
                     Email = request.Email,
-                    PasswordHash = request.Password, // 실무에서는 반드시 암호화 필요
+                    PasswordHash = hashedPassword,
                     Nickname = request.Nickname,
                     Department = request.Department,
                     StudentId = request.StudentId,
@@ -81,7 +83,7 @@ namespace TeamMatching.Web.Services
                 }
 
                 // 2. 비밀번호 검증 (현재는 단순 비교: 실무에서는 해싱 비교 필요)
-                if (user.PasswordHash != request.Password)
+                if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
                     return new LoginResponse { IsSuccess = false, Message = "비밀번호가 일치하지 않습니다." };
                 }
