@@ -37,7 +37,7 @@ namespace TeamMatching.Web.Services
                 }
                 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-                // 2. 유저 엔티티 생성 (비밀번호 해싱은 추후 보안 강화 시 적용)
+                // 2. 유저 엔티티 생성
                 var user = new User
                 {
                     Email = request.Email,
@@ -82,7 +82,7 @@ namespace TeamMatching.Web.Services
                     return new LoginResponse { IsSuccess = false, Message = "가입되지 않은 이메일입니다." };
                 }
 
-                // 2. 비밀번호 검증 (현재는 단순 비교: 실무에서는 해싱 비교 필요)
+                // 2. 비밀번호 검증
                 if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
                     return new LoginResponse { IsSuccess = false, Message = "비밀번호가 일치하지 않습니다." };
