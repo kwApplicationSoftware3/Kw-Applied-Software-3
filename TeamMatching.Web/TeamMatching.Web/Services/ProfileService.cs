@@ -76,8 +76,8 @@ namespace TeamMatching.Web.Services
                 {
                     return new UpdateProfileResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
                 }
-                
-                if (request.OldPassword!=user.PasswordHash)
+
+                if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash))
                 {
                     return new UpdateProfileResponse { IsSuccess = false, Message = "기존 비밀번호가 일치하지 않습니다." };
                 }
@@ -87,7 +87,7 @@ namespace TeamMatching.Web.Services
                 user.ProfileImageUrl = request.ProfileImageUrl;
                 if (!string.IsNullOrEmpty(request.NewPassword))
                 {
-                    user.PasswordHash = request.NewPassword;
+                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
                 }
                 user.UpdatedAt = DateTime.Now;
 
@@ -95,7 +95,7 @@ namespace TeamMatching.Web.Services
                 {
                     user.UserTags.Clear();
 
-                    // [중요] DB에 실제 존재하는 Tag인지 확인 후 추가
+                    //DB에 실제 존재하는 Tag인지 확인 후 추가
                     var validTagIds = await _context.Tags
                         .Where(t => request.SelectedTagIds.Contains(t.Id))
                         .Select(t => t.Id)
