@@ -3,6 +3,7 @@
 @using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
+@using TeamMatching.Shared.Enums
 @inject PostClientService PostService
 @inject NavigationManager Nav
 
@@ -19,27 +20,58 @@
         </AuthorizeView>
     </header>
 
+    <div class="status-filter-bar">
+        <button class="status-btn @(statusFilter == "all" ? "active" : "")" @onclick='() => statusFilter = "all"'>전체</button>
+        <button class="status-btn @(statusFilter == "recruiting" ? "active" : "")" @onclick='() => statusFilter = "recruiting"'>모집중</button>
+        <button class="status-btn @(statusFilter == "closed" ? "active" : "")" @onclick='() => statusFilter = "closed"'>모집완료</button>
+    </div>
+
     <section class="filter-section card">
-        <span class="filter-label">관심 키워드 필터:</span>
-        <div class="tag-cloud">
-            <span class="tag @(string.IsNullOrEmpty(selectedTag) ? "active" : "")" @onclick='() => FilterByTag(null)'>All</span>
-            @if (availableTags != null)
-            {
-                @foreach (var tag in availableTags)
+        <span class="filter-label">기술 스택 필터</span>
+        <div class="tag-search-wrapper">
+            <!-- 선택된 태그 칩 + 검색 입력 -->
+            <div class="tag-input-box" @onclick="FocusInput">
+                @foreach (var tagName in selectedTags)
                 {
-                    <span class="tag @(selectedTag == tag.Name ? "active" : "")" @onclick="() => FilterByTag(tag.Name)">#@tag.Name</span>
+                    <span class="tag-chip">
+                        #@tagName
+                        <button type="button" class="chip-remove" @onclick="() => RemoveTag(tagName)" @onclick:stopPropagation="true">×</button>
+                    </span>
                 }
+                <input id="tagSearchInput"
+                       class="tag-search-input"
+                       placeholder="@(selectedTags.Count == 0 ? "태그 검색..." : "")"
+                       @bind="tagSearch"
+                       @bind:event="oninput"
+                       @onfocus="() => showDropdown = true"
+                       @onblur="HideDropdownDelayed" />
+            </div>
+            <!-- 드롭다운 -->
+            @if (showDropdown && filteredTagSuggestions.Any())
+            {
+                <div class="tag-dropdown">
+                    @foreach (var tag in filteredTagSuggestions)
+                    {
+                        <div class="tag-dropdown-item" @onmousedown="() => AddTag(tag.Name)">
+                            #@tag.Name
+                        </div>
+                    }
+                </div>
             }
         </div>
+        @if (selectedTags.Count > 0)
+        {
+            <button class="clear-btn" @onclick="ClearAllTags">전체 해제</button>
+        }
     </section>
 
     @if (posts == null)
     {
         <div class="loading-state">데이터를 불러오는 중입니다...</div>
     }
-    else if (posts.Count == 0)
+    else if (!filteredPosts.Any())
     {
-        <div class="empty-state card">등록된 모집글이 없습니다. 첫 번째 주인공이 되어보세요!</div>
+        <div class="empty-state card">조건에 맞는 모집글이 없습니다.</div>
     }
     else
     {
@@ -47,7 +79,9 @@
             @foreach (var post in filteredPosts)
             {
                 <div class="card post-card" @onclick='() => Nav.NavigateTo($"/post-detail/{post.Id}")'>
-                    <div class="post-badge recruiting">모집중</div>
+                    <div class="post-badge @(post.Status == PostStatus.Recruiting ? "recruiting" : "closed")">
+                        @(post.Status == PostStatus.Recruiting ? "모집중" : "모집완료")
+                    </div>
                     <h3 class="post-title">@post.Title</h3>
                     <p class="post-desc">@post.Summary</p>
                     <div class="post-tags">
@@ -72,12 +106,30 @@
 @code {
     private List<PostListItemDto>? posts;
     private List<Tag>? availableTags;
-    private string? selectedTag;
+    private HashSet<string> selectedTags = new();
+    private string tagSearch = "";
+    private string statusFilter = "all";
+    private bool showDropdown = false;
 
-    private IEnumerable<PostListItemDto> filteredPosts => 
-        string.IsNullOrEmpty(selectedTag) 
-        ? (posts ?? []) 
-        : (posts?.Where(p => p.Tags != null && p.Tags.Contains(selectedTag!)) ?? []);
+    private IEnumerable<Tag> filteredTagSuggestions =>
+        (availableTags ?? [])
+            .Where(t => !selectedTags.Contains(t.Name) &&
+                        (string.IsNullOrEmpty(tagSearch) || t.Name.Contains(tagSearch, StringComparison.OrdinalIgnoreCase)));
+
+    private IEnumerable<PostListItemDto> filteredPosts
+    {
+        get
+        {
+            var result = (posts ?? []).AsEnumerable();
+            if (statusFilter == "recruiting")
+                result = result.Where(p => p.Status == PostStatus.Recruiting);
+            else if (statusFilter == "closed")
+                result = result.Where(p => p.Status != PostStatus.Recruiting);
+            if (selectedTags.Count > 0)
+                result = result.Where(p => p.Tags != null && selectedTags.Any(t => p.Tags.Contains(t)));
+            return result;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,25 +146,65 @@
         }
     }
 
-    private void FilterByTag(string? tag)
+    private void AddTag(string tagName)
     {
-        selectedTag = tag;
-        StateHasChanged();
+        selectedTags.Add(tagName);
+        tagSearch = "";
+        showDropdown = false;
+    }
+
+    private void RemoveTag(string tagName)
+    {
+        selectedTags.Remove(tagName);
+    }
+
+    private async Task HideDropdownDelayed()
+    {
+        await Task.Delay(150);
+        showDropdown = false;
+    }
+
+    private void FocusInput()
+    {
+        showDropdown = true;
+    }
+
+    private void ClearAllTags()
+    {
+        selectedTags.Clear();
+        tagSearch = "";
     }
 }
 
 <style>
     .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .filter-section { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 1rem 1.5rem; }
-    .filter-label { font-weight: 600; white-space: nowrap; }
-    .tag-cloud { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 5px; }
-    .tag { cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 999px; background: #f3f4f6; white-space: nowrap; font-size: 0.85rem; transition: all 0.2s; border: 1px solid transparent; }
-    .tag.active { background: #3b82f6; color: white; border-color: #2563eb; }
-    .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-    .post-card { transition: transform 0.2s; cursor: pointer; position: relative; }
+    .status-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .status-btn { padding: 0.4rem 1.2rem; border-radius: 2rem; border: 1px solid #e5e7eb; background: white; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: #6b7280; transition: all 0.2s; }
+    .status-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .post-badge.closed { background: #f3f4f6; color: #6b7280; }
+
+    /* 필터 섹션 */
+    .filter-section { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding: 1rem 1.5rem; flex-wrap: wrap; }
+    .filter-label { font-weight: 600; white-space: nowrap; padding-top: 0.5rem; }
+    .tag-search-wrapper { position: relative; flex: 1; min-width: 200px; }
+    .tag-input-box { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-height: 2.5rem; padding: 0.35rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: white; cursor: text; }
+    .tag-input-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .tag-search-input { border: none; outline: none; font-size: 0.9rem; flex: 1; min-width: 80px; background: transparent; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 600; }
+    .chip-remove { background: none; border: none; cursor: pointer; color: #3b82f6; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; }
+    .chip-remove:hover { color: #dc2626; }
+    .tag-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; }
+    .tag-dropdown-item { padding: 0.5rem 0.875rem; font-size: 0.875rem; cursor: pointer; color: #374151; }
+    .tag-dropdown-item:hover { background: #eff6ff; color: #1e40af; }
+    .clear-btn { white-space: nowrap; font-size: 0.8rem; color: #6b7280; background: none; border: none; cursor: pointer; padding-top: 0.5rem; text-decoration: underline; }
+    .clear-btn:hover { color: #dc2626; }
+
+    /* 카드 그리드 */
+    .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .post-card { transition: transform 0.2s; cursor: pointer; position: relative; min-width: 0; overflow: hidden; }
     .post-card:hover { transform: translateY(-5px); }
     .post-badge { position: absolute; top: 1rem; right: 1rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; background: #dcfce7; color: #166534; }
-    .post-title { margin-top: 0.5rem; font-size: 1.25rem; padding-right: 3rem; font-weight: 700; }
+    .post-title { margin-top: 0.5rem; font-size: 1.1rem; padding-right: 3rem; font-weight: 700; word-break: break-word; overflow-wrap: break-word; white-space: normal; }
     .post-desc { color: #6b7280; font-size: 0.9rem; line-height: 1.5; margin: 1rem 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .tag-mini { font-size: 0.75rem; color: #3b82f6; margin-right: 0.5rem; font-weight: 600; }
     .post-footer { display: flex; justify-content: space-between; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; font-size: 0.8rem; color: #9ca3af; }

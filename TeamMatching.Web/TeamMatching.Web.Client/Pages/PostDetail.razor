@@ -3,8 +3,15 @@
 @using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
+@using TeamMatching.Shared.Enums
 @inject PostClientService PostService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+
+@if (!string.IsNullOrEmpty(toastMessage))
+{
+    <div class="toast @toastType">@toastMessage</div>
+}
 
 <div class="container">
     @if (post == null)
@@ -17,23 +24,68 @@
             <main class="detail-main">
                 <div class="card">
                     <nav class="breadcrumb" @onclick='() => Nav.NavigateTo("/")' style="cursor:pointer;">게시판 > 프로젝트 모집</nav>
-                    <h1 class="detail-title">@post.Title</h1>
-                    <hr />
-                    <div class="detail-content">
-                        <h3>상세 설명</h3>
-                        <div class="content-body">@post.Content</div>
-                        <h3>필요 기술 스택</h3>
-                        <div class="tag-cloud">
-                            @if (availableTags != null && post.SelectedTagIds != null)
+                    @if (isEditing && editModel != null)
+                    {
+                        <div class="edit-form">
+                            <div class="form-group">
+                                <label>제목</label>
+                                <input class="form-control" @bind="editModel.Title" />
+                            </div>
+                            <div class="form-group mt-1">
+                                <label>모집글 요약 <span style="color:#9ca3af;font-size:0.8rem;">(목록에 표시되는 짧은 소개)</span></label>
+                                <textarea class="form-control" @bind="editModel.Summary" rows="2" placeholder="목록에서 보일 짧은 소개를 입력하세요."></textarea>
+                            </div>
+                            <div class="form-group mt-1">
+                                <label>상세 설명</label>
+                                <textarea class="form-control" @bind="editModel.Content" rows="8"></textarea>
+                            </div>
+                            <div class="form-group mt-1">
+                                <label>모집 인원</label>
+                                <input type="number" class="form-control" @bind="editModel.MaxMembers" min="1" max="10" />
+                            </div>
+                            <div class="form-group mt-1">
+                                <label>필요 기술 스택</label>
+                                <div class="tag-cloud">
+                                    @if (availableTags != null)
+                                    {
+                                        @foreach (var tag in availableTags)
+                                        {
+                                            <span class="tag @(editModel.SelectedTagIds.Contains(tag.Id) ? "active-tag" : "")"
+                                                  style="cursor:pointer;"
+                                                  @onclick="() => ToggleEditTag(tag.Id)">#@tag.Name</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <h1 class="detail-title">@post.Title</h1>
+                        <div class="post-dates">
+                            <span>작성일: @post.CreatedAt.ToString("yyyy.MM.dd HH:mm")</span>
+                            @if (post.UpdatedAt.HasValue && post.UpdatedAt > post.CreatedAt)
                             {
-                                @foreach (var tagId in post.SelectedTagIds)
-                                {
-                                    var tagName = availableTags.FirstOrDefault(t => t.Id == tagId)?.Name ?? tagId.ToString();
-                                    <span class="tag">#@tagName</span>
-                                }
+                                <span class="updated-date">수정됨: @post.UpdatedAt.Value.ToString("yyyy.MM.dd HH:mm")</span>
                             }
                         </div>
-                    </div>
+                        <hr />
+                        <div class="detail-content">
+                            <h3>상세 설명</h3>
+                            <div class="content-body">@post.Content</div>
+                            <h3>필요 기술 스택</h3>
+                            <div class="tag-cloud">
+                                @if (availableTags != null && post.SelectedTagIds != null)
+                                {
+                                    @foreach (var tagId in post.SelectedTagIds)
+                                    {
+                                        var tagName = availableTags.FirstOrDefault(t => t.Id == tagId)?.Name ?? tagId.ToString();
+                                        <span class="tag">#@tagName</span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 @if (post.IsMyPost)
@@ -66,8 +118,10 @@
                                             </div>
                                         </div>
                                         <div class="applicant-actions">
-                                            <button class="btn-primary-sm" @onclick="() => HandleAccept(app.ApplicationId)">수락</button>
-                                            <button class="btn-outline-sm danger" @onclick="() => HandleReject(app.ApplicationId)">거절</button>
+                                            <button class="btn-primary-sm" @onclick="() => HandleAccept(app.ApplicationId)" disabled="@isProcessingApp">
+                                                @(processingAppId == app.ApplicationId && isProcessingApp ? "처리 중..." : "✓ 수락")
+                                            </button>
+                                            <button class="btn-outline-sm danger" @onclick="() => HandleReject(app.ApplicationId)" disabled="@isProcessingApp">✕ 거절</button>
                                         </div>
                                     </div>
                                 }
@@ -96,8 +150,20 @@
                         <Authorized>
                             @if (post.IsMyPost)
                             {
-                                <button class="btn-outline full-width mb-2" @onclick="HandleEdit">수정하기</button>
-                                <button class="btn-outline danger full-width" @onclick="HandleDelete">삭제하기</button>
+                                @if (!isEditing)
+                                {
+                                    <button class="btn-outline full-width mb-2" @onclick="HandleEdit">수정하기</button>
+                                    <button class="btn-outline danger full-width" @onclick="HandleDelete" disabled="@isSubmitting">
+                                        @(isSubmitting ? "삭제 중..." : "삭제하기")
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn-primary full-width mb-2" @onclick="HandleUpdateSubmit" disabled="@isSubmitting">
+                                        @(isSubmitting ? "저장 중..." : "저장하기")
+                                    </button>
+                                    <button class="btn-outline full-width" @onclick="() => isEditing = false">취소</button>
+                                }
                             }
                             else
                             {
@@ -132,6 +198,12 @@
     private string applyMessage = "";
     private string? errorMessage;
     private bool isSubmitting;
+    private bool isEditing;
+    private UpdatePostRequest? editModel;
+    private bool isProcessingApp;
+    private int processingAppId;
+    private string? toastMessage;
+    private string toastType = "toast-success";
 
     protected override async Task OnInitializedAsync()
     {
@@ -193,16 +265,134 @@
         finally { isSubmitting = false; }
     }
 
-    private void HandleAccept(int appId) { Console.WriteLine($"Accepting {appId}"); }
-    private void HandleReject(int appId) { Console.WriteLine($"Rejecting {appId}"); }
-    private void HandleEdit() { }
-    private void HandleDelete() { }
+    private async Task HandleAccept(int appId)
+    {
+        isProcessingApp = true;
+        processingAppId = appId;
+        errorMessage = null;
+        try
+        {
+            var result = await PostService.AcceptMemberAsync(Id, new AcceptMemberRequest
+            {
+                ApplicationId = appId,
+                Status = ApplicationStatus.Accepted
+            });
+            if (result?.IsSuccess == true)
+            {
+                await LoadApplicants();
+                await LoadPost();
+                await ShowToast("✓ 팀원을 수락했습니다.", "toast-success");
+            }
+            else
+            {
+                await ShowToast(result?.Message ?? "수락에 실패했습니다.", "toast-error");
+            }
+        }
+        catch { await ShowToast("서버 통신 오류.", "toast-error"); }
+        finally { isProcessingApp = false; processingAppId = 0; }
+    }
+
+    private async Task ShowToast(string message, string type = "toast-success")
+    {
+        toastMessage = message;
+        toastType = type;
+        StateHasChanged();
+        await Task.Delay(2500);
+        toastMessage = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleReject(int appId)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "이 지원자를 거절하시겠습니까?");
+        if (!confirmed) return;
+
+        errorMessage = null;
+        try
+        {
+            var result = await PostService.AcceptMemberAsync(Id, new AcceptMemberRequest
+            {
+                ApplicationId = appId,
+                Status = ApplicationStatus.Rejected
+            });
+            if (result?.IsSuccess == true)
+            {
+                await LoadApplicants();
+            }
+            else errorMessage = result?.Message ?? "거절에 실패했습니다.";
+        }
+        catch { errorMessage = "서버 통신 오류."; }
+    }
+
+    private void HandleEdit()
+    {
+        if (post == null) return;
+        editModel = new UpdatePostRequest
+        {
+            Title = post.Title,
+            Summary = "",        // GetPostDetailResponse에 Summary 필드 없음 — 직접 입력
+            Content = post.Content,
+            MaxMembers = post.MaxMembers,
+            Category = null,     // GetPostDetailResponse에 Category 필드 없음
+            SelectedTagIds = post.SelectedTagIds?.ToList() ?? []
+        };
+        isEditing = true;
+    }
+
+    private void ToggleEditTag(int tagId)
+    {
+        if (editModel == null) return;
+        if (editModel.SelectedTagIds.Contains(tagId)) editModel.SelectedTagIds.Remove(tagId);
+        else editModel.SelectedTagIds.Add(tagId);
+    }
+
+    private async Task HandleUpdateSubmit()
+    {
+        if (editModel == null) return;
+        isSubmitting = true;
+        errorMessage = null;
+        try
+        {
+            var result = await PostService.UpdatePostAsync(Id, editModel);
+            if (result?.IsSuccess == true)
+            {
+                isEditing = false;
+                await LoadPost();
+            }
+            else errorMessage = result?.Message ?? "수정에 실패했습니다.";
+        }
+        catch { errorMessage = "서버 통신 오류."; }
+        finally { isSubmitting = false; }
+    }
+
+    private async Task HandleDelete()
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "모집글을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.");
+        if (!confirmed) return;
+
+        isSubmitting = true;
+        errorMessage = null;
+        try
+        {
+            var result = await PostService.DeletePostAsync(Id);
+            if (result?.IsSuccess == true) Nav.NavigateTo("/");
+            else errorMessage = result?.Message ?? "삭제에 실패했습니다.";
+        }
+        catch { errorMessage = "서버 통신 오류."; }
+        finally { isSubmitting = false; }
+    }
 }
 
 <style>
+    .toast { position: fixed; top: 1.5rem; right: 1.5rem; padding: 0.85rem 1.5rem; border-radius: 0.6rem; font-weight: 600; font-size: 0.95rem; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.25s ease; }
+    .toast-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .toast-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    @@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .detail-layout { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; margin-top: 2rem; }
     .breadcrumb { font-size: 0.85rem; color: #9ca3af; margin-bottom: 1rem; }
-    .detail-title { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800; }
+    .detail-title { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800; word-break: break-word; overflow-wrap: break-word; }
+    .post-dates { display: flex; gap: 1.5rem; font-size: 0.82rem; color: #9ca3af; margin-bottom: 1rem; }
+    .updated-date { color: #6b7280; }
     .detail-content h3 { margin-top: 2rem; font-size: 1.25rem; font-weight: 700; }
     .detail-content p, .content-body { line-height: 1.7; color: #374151; white-space: pre-wrap; }
     .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
@@ -227,4 +417,10 @@
     .btn-primary-sm { background: #3b82f6; color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
     .btn-outline-sm { background: white; border: 1px solid #d1d5db; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 600; cursor: pointer; }
     .btn-outline-sm.danger { color: #ef4444; }
+    .edit-form { padding: 0.5rem 0; }
+    .edit-form .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .edit-form .form-control { padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 1rem; width: 100%; }
+    .edit-form textarea.form-control { resize: vertical; }
+    .mt-1 { margin-top: 1rem; }
+    .active-tag { background: #eff6ff !important; color: #1e40af !important; border: 1px solid #3b82f6 !important; font-weight: 700; }
 </style>

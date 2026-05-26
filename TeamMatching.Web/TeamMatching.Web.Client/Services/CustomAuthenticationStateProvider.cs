@@ -28,6 +28,14 @@ namespace TeamMatching.Web.Client.Services
                     return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
                 }
 
+                // JWT exp 클레임으로 만료 여부 체크
+                if (IsTokenExpired(token))
+                {
+                    await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+                    _httpClient.DefaultRequestHeaders.Authorization = null;
+                    return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                }
+
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt")));
@@ -36,6 +44,28 @@ namespace TeamMatching.Web.Client.Services
             {
                 // SSR(서버 사이드 렌더링) 단계에서는 JS를 호출할 수 없으므로 익명 사용자 상태를 반환합니다.
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            }
+        }
+
+        private bool IsTokenExpired(string jwt)
+        {
+            try
+            {
+                var payload = jwt.Split('.')[1];
+                var jsonBytes = ParseBase64WithoutPadding(payload);
+                var claims = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+
+                if (claims != null && claims.TryGetValue("exp", out var expObj))
+                {
+                    var exp = long.Parse(expObj.ToString()!);
+                    var expTime = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+                    return DateTime.UtcNow >= expTime;
+                }
+                return false;
+            }
+            catch
+            {
+                return true; // 파싱 실패 시 만료로 간주
             }
         }
 

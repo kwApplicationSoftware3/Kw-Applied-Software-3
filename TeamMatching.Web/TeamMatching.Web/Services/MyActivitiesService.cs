@@ -36,7 +36,7 @@ namespace TeamMatching.Web.Services
                 var user = await _context.Users
                     .Include(u => u.MyPosts).ThenInclude(p => p.Applications)
                     .Include(u => u.MyApplications).ThenInclude(a => a.Post).ThenInclude(p => p.Author)
-                    .Include(u => u.TeamMemberships).ThenInclude(tm => tm.Team) // Team 데이터까지 조인해서 가져오기
+                    .Include(u => u.TeamMemberships).ThenInclude(tm => tm.Team).ThenInclude(t => t.Post) // Post.Status 확인용
                     .FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
@@ -63,7 +63,8 @@ namespace TeamMatching.Web.Services
                 List<ActivityTeamDto> myTeams = new List<ActivityTeamDto>();
                 foreach (var membership in user.TeamMemberships)
                 {
-                    myTeams.Add(new ActivityTeamDto { TeamId = membership.TeamId, TeamName = membership.Team.TeamName, PostId = membership.Team.PostId });
+                    bool isEnded = membership.Team.Post?.Status == PostStatus.Completed;
+                    myTeams.Add(new ActivityTeamDto { TeamId = membership.TeamId, TeamName = membership.Team.TeamName, PostId = membership.Team.PostId, IsEnded = isEnded });
                 }
 
                 return new GetMyActivitiesResponse { IsSuccess = true, Message = "내 활동을 성공적으로 불러왔습니다.", MyPosts = myPosts, MyApplications = myApplications, MyTeams = myTeams };

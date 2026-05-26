@@ -37,6 +37,8 @@ namespace TeamMatching.Shared.DTOs
         public string TeamName { get; set; } = string.Empty;
 
         public int PostId { get; set; }
+
+        public bool IsEnded { get; set; } // 프로젝트 종료 여부 (PostStatus.Completed)
     }
 
     public class GetMyActivitiesResponse

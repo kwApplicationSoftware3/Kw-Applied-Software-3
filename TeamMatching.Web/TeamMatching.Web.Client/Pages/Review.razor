@@ -91,7 +91,7 @@
             }
 
             <div class="form-actions">
-                <button class="btn-secondary" @onclick="GoBack" disabled="@isSubmitting">나중에 하기</button>
+                <button class="btn-later" @onclick="GoBack" disabled="@isSubmitting">나중에 하기</button>
                 <button class="btn-primary" @onclick="SubmitReviews" disabled="@isSubmitting">
                     @(isSubmitting ? "제출 중..." : "평가 완료 및 제출")
                 </button>
@@ -210,6 +210,9 @@
     .stars { font-size: 1.5rem; color: #d1d5db; cursor: pointer; }
     .star.filled { color: #fbbf24; }
     .form-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 3rem; }
+    .btn-later { padding: 0.75rem 2rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; border: 2px solid #d1d5db; background: #ffffff; color: #4b5563; transition: background 0.2s, border-color 0.2s; }
+    .btn-later:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
+    .btn-later:disabled { opacity: 0.5; cursor: not-allowed; }
     .loading-state, .error-state { text-align: center; padding: 5rem; color: #6b7280; }
     .alert-danger { background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; text-align: center; }
     .mt-2 { margin-top: 1rem; }

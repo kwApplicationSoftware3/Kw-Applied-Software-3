@@ -15,13 +15,13 @@
 
         <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
             <DataAnnotationsValidator />
-            
+
             <div class="form-group">
                 <label for="email">이메일</label>
                 <InputText id="email" class="form-control" @bind-Value="registerModel.Email" placeholder="example@university.ac.kr" />
                 <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
             </div>
-            
+
             <div class="form-group">
                 <label for="nickname">닉네임</label>
                 <InputText id="nickname" class="form-control" @bind-Value="registerModel.Nickname" placeholder="활동할 닉네임을 입력하세요" />
@@ -35,21 +35,53 @@
             </div>
 
             <div class="form-group">
-                <label>관심 기술 스택 (다중 선택 가능)</label>
-                <div class="tag-selection">
-                    @if (availableTags == null)
-                    {
-                        <span>태그를 불러오는 중...</span>
-                    }
-                    else
-                    {
-                        @foreach (var tag in availableTags)
+                <label for="confirmPassword">비밀번호 확인</label>
+                <input type="password" id="confirmPassword" class="form-control" @bind="confirmPassword" placeholder="비밀번호를 다시 입력하세요" />
+                @if (!string.IsNullOrEmpty(confirmPassword) && confirmPassword != registerModel.Password)
+                {
+                    <span class="text-danger" style="font-size:0.85rem;">비밀번호가 일치하지 않습니다.</span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label for="department">학과</label>
+                <InputText id="department" class="form-control" @bind-Value="registerModel.Department" placeholder="소속 학과를 입력하세요" />
+            </div>
+
+            <div class="form-group">
+                <label for="studentId">학번</label>
+                <InputText id="studentId" class="form-control" @bind-Value="registerModel.StudentId" placeholder="학번을 입력하세요 (예: 20231234)" />
+            </div>
+
+            <div class="form-group">
+                <label>관심 기술 스택</label>
+                <div class="tag-search-wrapper">
+                    <div class="tag-input-box">
+                        @foreach (var tagId in registerModel.SelectedTagIds)
                         {
-                            <button type="button" class="tag @(registerModel.SelectedTagIds.Contains(tag.Id) ? "active" : "")" 
-                                  @onclick="() => ToggleTag(tag.Id)">
-                                #@tag.Name
-                            </button>
+                            var tagName = availableTags?.FirstOrDefault(t => t.Id == tagId)?.Name ?? tagId.ToString();
+                            <span class="tag-chip">
+                                #@tagName
+                                <button type="button" class="chip-remove" @onclick="() => RemoveTag(tagId)" @onclick:stopPropagation="true">×</button>
+                            </span>
                         }
+                        <input class="tag-search-input"
+                               placeholder="@(registerModel.SelectedTagIds.Count == 0 ? "기술 스택 검색..." : "")"
+                               @bind="tagSearch"
+                               @bind:event="oninput"
+                               @onfocus="() => showDropdown = true"
+                               @onblur="HideDropdownDelayed" />
+                    </div>
+                    @if (showDropdown && filteredTagSuggestions.Any())
+                    {
+                        <div class="tag-dropdown">
+                            @foreach (var tag in filteredTagSuggestions)
+                            {
+                                <div class="tag-dropdown-item" @onmousedown="() => AddTag(tag.Id)">
+                                    #@tag.Name
+                                </div>
+                            }
+                        </div>
                     }
                 </div>
             </div>
@@ -62,7 +94,7 @@
             <button type="submit" class="btn-primary mt-2" disabled="@isSubmitting">
                 @(isSubmitting ? "처리 중..." : "가입 완료")
             </button>
-            
+
             <div class="auth-links">
                 <span>이미 계정이 있으신가요?</span>
                 <a href="/login" class="link-primary">로그인</a>
@@ -73,9 +105,17 @@
 
 @code {
     private RegisterRequest registerModel = new();
+    private string confirmPassword = "";
     private string? errorMessage;
     private bool isSubmitting = false;
     private List<Tag>? availableTags;
+    private string tagSearch = "";
+    private bool showDropdown = false;
+
+    private IEnumerable<Tag> filteredTagSuggestions =>
+        (availableTags ?? [])
+            .Where(t => !registerModel.SelectedTagIds.Contains(t.Id) &&
+                        (string.IsNullOrEmpty(tagSearch) || t.Name.Contains(tagSearch, StringComparison.OrdinalIgnoreCase)));
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,14 +123,33 @@
         catch { availableTags = []; }
     }
 
-    private void ToggleTag(int tagId)
+    private void AddTag(int tagId)
     {
-        if (registerModel.SelectedTagIds.Contains(tagId)) registerModel.SelectedTagIds.Remove(tagId);
-        else registerModel.SelectedTagIds.Add(tagId);
+        if (!registerModel.SelectedTagIds.Contains(tagId))
+            registerModel.SelectedTagIds.Add(tagId);
+        tagSearch = "";
+        showDropdown = false;
+    }
+
+    private void RemoveTag(int tagId)
+    {
+        registerModel.SelectedTagIds.Remove(tagId);
+    }
+
+    private async Task HideDropdownDelayed()
+    {
+        await Task.Delay(150);
+        showDropdown = false;
     }
 
     private async Task HandleRegister()
     {
+        if (confirmPassword != registerModel.Password)
+        {
+            errorMessage = "비밀번호가 일치하지 않습니다.";
+            return;
+        }
+
         isSubmitting = true;
         errorMessage = null;
 
@@ -106,16 +165,27 @@
 }
 
 <style>
-    .auth-card { max-width: 500px; margin: 2rem auto; padding: 2.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .auth-card { max-width: 500px; margin: 2rem auto; padding: 2.5rem; background: white; border: 1px solid #e5e7eb; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .auth-title { font-size: 1.75rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
     .auth-subtitle { text-align: center; color: #6b7280; margin-bottom: 2rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
     .form-control { padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 1rem; }
-    .tag-selection { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 0; }
-    .tag { cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 999px; background: #f3f4f6; color: #4b5563; font-size: 0.85rem; border: 1px solid transparent; }
-    .tag.active { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
     .btn-primary { background: #3b82f6; color: white; border: none; padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; width: 100%; }
     .alert-danger { background: #fef2f2; color: #991b1b; padding: 0.75rem; border-radius: 0.5rem; margin: 1rem 0; }
     .auth-links { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; }
     .link-primary { color: #3b82f6; text-decoration: none; font-weight: 600; margin-left: 0.5rem; }
+    .text-danger { color: #dc2626; }
+    .mt-2 { margin-top: 1rem; }
+
+    /* 태그 검색 공통 */
+    .tag-search-wrapper { position: relative; }
+    .tag-input-box { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-height: 2.5rem; padding: 0.35rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: white; cursor: text; }
+    .tag-input-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .tag-search-input { border: none; outline: none; font-size: 0.9rem; flex: 1; min-width: 100px; background: transparent; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 600; }
+    .chip-remove { background: none; border: none; cursor: pointer; color: #3b82f6; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; }
+    .chip-remove:hover { color: #dc2626; }
+    .tag-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 180px; overflow-y: auto; }
+    .tag-dropdown-item { padding: 0.5rem 0.875rem; font-size: 0.875rem; cursor: pointer; color: #374151; }
+    .tag-dropdown-item:hover { background: #eff6ff; color: #1e40af; }
 </style>

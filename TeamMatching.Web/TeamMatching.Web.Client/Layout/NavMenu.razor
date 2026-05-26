@@ -1,30 +1,104 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TeamMatching.Web</a>
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeamMatching.Web.Client.Services
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<nav class="top-nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">🤝 팀매칭</a>
+
+        <div class="nav-links">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">게시판</NavLink>
+
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="nav-link" href="/my-activities">내 활동</NavLink>
+                    <NavLink class="nav-link" href="/profile">프로필</NavLink>
+                    <button class="nav-btn-logout" @onclick="HandleLogout">로그아웃</button>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="nav-link" href="/login">로그인</NavLink>
+                    <a class="nav-btn-signup" href="/signup">회원가입</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    private async Task HandleLogout()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        ((CustomAuthenticationStateProvider)AuthStateProvider).NotifyUserLogout();
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+}
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
+<style>
+    .top-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .nav-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .nav-brand {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #1e40af;
+        text-decoration: none;
+        letter-spacing: -0.5px;
+    }
+    .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .nav-link {
+        padding: 0.4rem 0.875rem;
+        border-radius: 0.5rem;
+        color: #374151;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: background 0.15s;
+    }
+    .nav-link:hover { background: #f3f4f6; }
+    .nav-link.active { color: #2563eb; font-weight: 700; background: #eff6ff; }
+    .nav-btn-logout {
+        padding: 0.4rem 0.875rem;
+        background: none;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-left: 0.5rem;
+        transition: all 0.15s;
+    }
+    .nav-btn-logout:hover { background: #fef2f2; color: #ef4444; border-color: #fca5a5; }
+    .nav-btn-signup {
+        padding: 0.4rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+        transition: background 0.15s;
+    }
+    .nav-btn-signup:hover { background: #2563eb; }
+</style>
