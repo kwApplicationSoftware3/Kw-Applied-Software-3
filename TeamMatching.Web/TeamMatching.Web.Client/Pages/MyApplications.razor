@@ -13,7 +13,7 @@
         <h2 class="page-title">내 활동 관리</h2>
         <div class="tab-menu">
             <button class="tab-btn @(activeTab == "posts" ? "active" : "")" @onclick='() => activeTab = "posts"'>내 모집글</button>
-            <button class="tab-btn @(activeTab == "apps" ? "active" : "")" @onclick='() => activeTab = "apps"'>지원 현황</button>
+             <button class="tab-btn @(activeTab == "apps" ? "active" : "")" @onclick='() => activeTab = "apps"'>지원 현황</button>
             <button class="tab-btn @(activeTab == "teams" ? "active" : "")" @onclick='() => activeTab = "teams"'>참여 팀</button>
         </div>
     </header>
@@ -82,7 +82,14 @@
                     {
                         <div class="activity-card card">
                             <div class="card-content">
-                                <span class="status-badge @app.Status.ToString().ToLower()">@app.Status</span>
+                                <span class="status-badge @app.Status.ToString().ToLower()">
+                                    @(app.Status switch {
+                                        ApplicationStatus.Pending => "대기중",
+                                        ApplicationStatus.Accepted => "수락됨",
+                                        ApplicationStatus.Rejected => "거절됨",
+                                        _ => app.Status.ToString()
+                                    })
+                                </span>
                                 <h4 class="post-title">@app.Title</h4>
                                 <p class="post-info">지원일: @app.CreatedAt.ToShortDateString()</p>
                             </div>
@@ -113,8 +120,14 @@
                                 <h4 class="post-title">@team.TeamName</h4>
                             </div>
                             <div class="card-actions">
-                                <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo($"/review/{team.TeamId}")'>팀원 평가하기</button>
-                                <button class="btn-outline" @onclick='() => Nav.NavigateTo($"/post-detail/{team.PostId}")'>상세보기</button>
+                                @if (!team.IsEnded)
+                                {
+                                    <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo($"/team/{team.TeamId}")'>팀 공간 입장</button>
+                                }
+                                @if (team.IsEnded)
+                                {
+                                    <button class="btn-outline" @onclick='() => Nav.NavigateTo($"/review/{team.TeamId}")'>팀원 평가</button>
+                                }
                             </div>
                         </div>
                     }

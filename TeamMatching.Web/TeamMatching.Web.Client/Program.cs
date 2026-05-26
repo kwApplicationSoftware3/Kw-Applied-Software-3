@@ -16,5 +16,6 @@ builder.Services.AddScoped<AuthClientService>();
 builder.Services.AddScoped<PostClientService>();
 builder.Services.AddScoped<ActivityClientService>();
 builder.Services.AddScoped<ProfileClientService>();
+builder.Services.AddScoped<TeamClientService>();
 
 await builder.Build().RunAsync();

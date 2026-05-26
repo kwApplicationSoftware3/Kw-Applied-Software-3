@@ -11,26 +11,32 @@ namespace TeamMatching.Web.Client.Services
         public async Task<GetMyActivitiesResponse?> GetMyActivitiesAsync()
         {
             await SetAuthorizationHeader();
-            return await Http.GetFromJsonAsync<GetMyActivitiesResponse>("api/my-activities");
+            var response = await Http.GetAsync("api/my-activities");
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<GetMyActivitiesResponse>();
         }
 
         public async Task<ClosePostResponse?> ClosePostAsync(ClosePostRequest request)
         {
             await SetAuthorizationHeader();
             var response = await Http.PostAsJsonAsync("api/my-activities", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
             return await response.Content.ReadFromJsonAsync<ClosePostResponse>();
         }
 
         public async Task<GetReviewTargetResponse?> GetReviewTargetAsync(int teamId)
         {
             await SetAuthorizationHeader();
-            return await Http.GetFromJsonAsync<GetReviewTargetResponse>($"api/my-activities/review/{teamId}");
+            var response = await Http.GetAsync($"api/my-activities/review/{teamId}");
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<GetReviewTargetResponse>();
         }
 
         public async Task<SubmitReviewResponse?> SubmitReviewAsync(int teamId, SubmitReviewRequest request)
         {
             await SetAuthorizationHeader();
             var response = await Http.PostAsJsonAsync($"api/my-activities/review/{teamId}", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
             return await response.Content.ReadFromJsonAsync<SubmitReviewResponse>();
         }
     }

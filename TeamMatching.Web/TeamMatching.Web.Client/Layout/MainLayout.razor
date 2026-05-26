@@ -23,6 +23,7 @@
                     </Authorizing>
                     <NotAuthorized>
                         <button type="button" class="btn-login-sm" @onclick='() => Nav.NavigateTo("/login")'>로그인</button>
+                        <button type="button" class="btn-signup-sm" @onclick='() => Nav.NavigateTo("/signup")'>회원가입</button>
                     </NotAuthorized>
                 </AuthorizeView>
             </nav>
@@ -110,7 +111,15 @@
         font-weight: 600;
         cursor: pointer;
     }
-    .btn-login-sm:hover {
-        background: #e5e7eb;
+    .btn-login-sm:hover { background: #e5e7eb; }
+    .btn-signup-sm {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.4rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
     }
+    .btn-signup-sm:hover { background: #2563eb; }
 </style>

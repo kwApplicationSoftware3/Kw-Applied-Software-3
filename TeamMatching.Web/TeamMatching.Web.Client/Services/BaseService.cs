@@ -33,5 +33,19 @@ namespace TeamMatching.Web.Client.Services
                 Http.DefaultRequestHeaders.Authorization = null;
             }
         }
+
+        /// <summary>
+        /// 401 Unauthorized 응답 시 토큰을 삭제하고 로그인 페이지로 이동합니다.
+        /// </summary>
+        protected async Task<bool> HandleUnauthorizedAsync(HttpResponseMessage response)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+                await JS.InvokeVoidAsync("eval", "window.location.href='/login'");
+                return true;
+            }
+            return false;
+        }
     }
 }

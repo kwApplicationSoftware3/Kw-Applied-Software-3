@@ -40,12 +40,13 @@ namespace TeamMatching.Web.Services
                 // 2. 게시글 엔티티 생성
                 var post = new Post
                 {
-                    AuthorId = authorId, 
+                    AuthorId = authorId,
                     Title = request.Title!,
                     Content = request.Content!,
                     Summary = request.Summary!,
                     Category = request.Category,
                     MaxMembers = request.MaxMembers,
+                    CurrentMembers = 1, // 작성자(팀장) 포함
                 };
 
                 // 3. 선택한 태그(기술 스택) 매핑

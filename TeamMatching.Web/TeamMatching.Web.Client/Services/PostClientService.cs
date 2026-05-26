@@ -17,13 +17,16 @@ namespace TeamMatching.Web.Client.Services
         public async Task<GetPostDetailResponse?> GetPostDetailAsync(int id)
         {
             await SetAuthorizationHeader();
-            return await Http.GetFromJsonAsync<GetPostDetailResponse>($"api/posts/{id}");
+            var response = await Http.GetAsync($"api/posts/{id}");
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<GetPostDetailResponse>();
         }
 
         public async Task<CreatePostResponse?> CreatePostAsync(CreatePostRequest request)
         {
             await SetAuthorizationHeader();
             var response = await Http.PostAsJsonAsync("api/posts", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
             return await response.Content.ReadFromJsonAsync<CreatePostResponse>();
         }
 
@@ -36,13 +39,40 @@ namespace TeamMatching.Web.Client.Services
         {
             await SetAuthorizationHeader();
             var response = await Http.PostAsJsonAsync($"api/posts/{postId}/apply", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
             return await response.Content.ReadFromJsonAsync<ApplyPostResponse>();
         }
 
         public async Task<GetApplicationsResponse?> GetApplicationsAsync(int postId)
         {
             await SetAuthorizationHeader();
-            return await Http.GetFromJsonAsync<GetApplicationsResponse>($"api/posts/{postId}/applications");
+            var response = await Http.GetAsync($"api/posts/{postId}/applications");
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<GetApplicationsResponse>();
+        }
+
+        public async Task<UpdatePostResponse?> UpdatePostAsync(int id, UpdatePostRequest request)
+        {
+            await SetAuthorizationHeader();
+            var response = await Http.PutAsJsonAsync($"api/posts/{id}", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<UpdatePostResponse>();
+        }
+
+        public async Task<DeletePostResponse?> DeletePostAsync(int id)
+        {
+            await SetAuthorizationHeader();
+            var response = await Http.DeleteAsync($"api/posts/{id}");
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<DeletePostResponse>();
+        }
+
+        public async Task<AcceptMemberResponse?> AcceptMemberAsync(int postId, AcceptMemberRequest request)
+        {
+            await SetAuthorizationHeader();
+            var response = await Http.PostAsJsonAsync($"api/posts/{postId}/applications", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<AcceptMemberResponse>();
         }
     }
 }
