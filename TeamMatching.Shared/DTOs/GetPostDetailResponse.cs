@@ -3,9 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeamMatching.Shared.Enums;
 
 namespace TeamMatching.Shared.DTOs
 {
+    public class TeamMemberRolePositionDto
+    {
+        public TeamRole TeamMemberRole { get; set; }
+        public string? TeamMemberPosition { get; set; }
+    }
+
     public class GetPostDetailResponse
     {
         public bool IsSuccess { get; set; }                    // 성공 여부
@@ -19,5 +26,6 @@ namespace TeamMatching.Shared.DTOs
         public DateTime? UpdatedAt { get; set; } // 글 수정 일자
         public int ApplicationCount { get; set; } // 지원서 개수
         public bool IsMyPost { get; set; }                     // 접속한 유저가 이 글의 작성자인지 여부 (true면 수정/삭제 버튼 노출)
+        public List<TeamMemberRolePositionDto>? TeamMembers { get; set; } // 팀이 결성된 경우 팀원 정보
     }
 }
