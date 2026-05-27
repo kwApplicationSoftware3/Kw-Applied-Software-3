@@ -246,7 +246,7 @@ namespace TeamMatching.Web.Services
                 var newTeam = new Team
                 {
                     PostId = post.Id,
-                    TeamName = $"{post.Title} 팀",
+                    TeamName = post.Title,
                     CreatedAt = DateTime.Now,
                     TeamMembers = new List<TeamMember>()
                 };
