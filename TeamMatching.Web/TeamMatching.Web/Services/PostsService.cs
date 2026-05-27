@@ -155,6 +155,7 @@ namespace TeamMatching.Web.Services
                     SelectedTagIds = post.PostTags.Select(pt => pt.TagId).ToList(),
                     // 현재 접속한 유저 ID가 있고, 그 ID가 글 작성자 ID와 같다면 true
                     IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value,
+                    IsClosed = post.Status != PostStatus.Recruiting,
                     CreatedAt = post.CreatedAt,
                     UpdatedAt = post.UpdatedAt,
                     ApplicationCount = post.Applications.Count,
@@ -186,11 +187,15 @@ namespace TeamMatching.Web.Services
                     ApplicationId = a.Id,
                     // Applicant가 아닌 User에서 닉네임을 가져옵니다.
                     Nickname = a.User?.Nickname ?? "알 수 없는 사용자",
+                    Bio = a.User?.Bio,
                     Message = a.Message ?? string.Empty,
                     // User의 태그 리스트에서 ID만 추출
                     SelectedTagIds = a.User?.UserTags.Select(ut => ut.TagId).ToList() ?? new List<int>(),
                     CreatedAt = a.CreatedAt,
-                    Status = a.Status
+                    Status = a.Status,
+                    ReliabilityScore = a.User?.ReliabilityScore ?? 0,
+                    ContributionScore = a.User?.ContributionScore ?? 0,
+                    CommunicationScore = a.User?.CommunicationScore ?? 0
                 }).ToList();
 
                 return new GetApplicationsResponse
