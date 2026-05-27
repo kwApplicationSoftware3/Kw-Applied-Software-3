@@ -29,6 +29,13 @@ namespace TeamMatching.Shared.DTOs
         public string? Position { get; set; }
     }
     
+    public class TeamScheduleSlotDto
+    {
+        public DateTime AvailableTime { get; set; }
+        public int Count { get; set; } // 선택한 멤버 수
+        public List<string> AvailableMemberNames { get; set; } = new(); // 선택한 멤버들의 닉네임
+    }
+
     public class GetTeamMainResponse
     {
         //서버 비즈니스 로직 처리 성공 여부 플래그 
@@ -44,5 +51,11 @@ namespace TeamMatching.Shared.DTOs
 
         // 현재 팀에 매칭되어 소속된 팀원들의 목록 현황 정보 배열       
         public List<TeamMemberRoleDto> TeamMemberRoles { get; set; } = new();
+
+        // 팀원별 가능 시간 종합 정보
+        public List<TeamScheduleSlotDto> TotalSchedules { get; set; } = new();
+
+        // 내(현재 접속 유저)가 선택한 가능 시간 목록
+        public List<DateTime> MySchedules { get; set; } = new();
     }
 }
