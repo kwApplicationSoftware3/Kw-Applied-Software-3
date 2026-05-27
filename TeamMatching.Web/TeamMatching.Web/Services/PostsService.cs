@@ -123,6 +123,24 @@ namespace TeamMatching.Web.Services
                 {
                     return new GetPostDetailResponse { IsSuccess = false, Message = "존재하지 않는 게시글입니다." };
                 }
+                
+                List<TeamMemberRolePositionDto>? teamMembers = null;
+                if (post.Status == PostStatus.InProgress || post.Status == PostStatus.Completed)
+                {
+                    var team = await _context.Teams
+                        .Include(t => t.TeamMembers)
+                        .ThenInclude(tm => tm.User)
+                        .FirstOrDefaultAsync(t => t.PostId == postId);
+
+                    if (team != null)
+                    {
+                        teamMembers = team.TeamMembers.Select(tm => new TeamMemberRolePositionDto
+                        {
+                            TeamMemberRole = tm.Role,
+                            TeamMemberPosition = tm.Position
+                        }).ToList();
+                    }
+                }
 
                 // 3. 브랜치 구조에 맞게 평탄화된 DTO에 데이터를 담아 반환
                 return new GetPostDetailResponse
@@ -139,7 +157,8 @@ namespace TeamMatching.Web.Services
                     IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value,
                     CreatedAt = post.CreatedAt,
                     UpdatedAt = post.UpdatedAt,
-                    ApplicationCount = post.Applications.Count
+                    ApplicationCount = post.Applications.Count,
+                    TeamMembers = teamMembers
                 };
             }
             catch (Exception ex)
