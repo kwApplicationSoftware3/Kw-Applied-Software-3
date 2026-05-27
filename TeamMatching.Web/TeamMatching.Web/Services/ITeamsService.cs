@@ -15,6 +15,7 @@ namespace TeamMatching.Web.Services
         Task<CreateTeamPostCommentResponse> CreateTeamPostCommentAsync(int teamId, int postId, int currentUserId, CreateTeamPostCommentRequest request);
         Task<EndProjectResponse> EndProjectAsync(int teamId, int currentUserId);
         Task<UpdateTeamRolesResponse> UpdateTeamRolesAsync(int teamId, int currentUserId, UpdateTeamRolesRequest request);
+        Task<SetAvailableTimesResponse> SetAvailableTimesAsync(int teamId, int currentUserId, SetAvailableTimesRequest request);
     }
 }
 

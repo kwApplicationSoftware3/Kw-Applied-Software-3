@@ -290,5 +290,35 @@ namespace TeamMatching.Web.Controllers
             // 권한이 없거나 처리 중 실패한 경우 400 에러 반환
             return BadRequest(result);
         }
+
+        // 팀원 가능 시간 설정
+        [Authorize]
+        [HttpPost("{teamId}/timetable")]
+        public async Task<ActionResult<SetAvailableTimesResponse>> SetAvailableTimes(int teamId, [FromBody] SetAvailableTimesRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new SetAvailableTimesResponse { IsSuccess = false, Message = "입력한 가능 시간 데이터 형식이 올바르지 않습니다." });
+            }
+
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (idClaim == null || !int.TryParse(idClaim.Value, out var currentUserId))
+            {
+                return Unauthorized(new SetAvailableTimesResponse
+                {
+                    IsSuccess = false,
+                    Message = "인증 토큰이 유효하지 않습니다. 다시 로그인해 주세요."
+                });
+            }
+
+            var result = await _teamsService.SetAvailableTimesAsync(teamId, currentUserId, request);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

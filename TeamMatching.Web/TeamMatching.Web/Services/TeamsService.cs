@@ -72,14 +72,41 @@ namespace TeamMatching.Web.Services
                     })
                     .ToList();
 
-                // 6. 명세서에 기재된 최종 포맷 양식인 단일 "data" 래퍼 구조체 내부에 모든 서브 리스트를 탑재하여 최종 반환 진행
+                // 6. 팀원들의 가능 시간을 종합합니다.
+                var availabilities = await _context.TeamAvailabilities
+                    .Include(ta => ta.Member)
+                        .ThenInclude(tm => tm.User)
+                    .Where(ta => ta.TeamId == teamId)
+                    .ToListAsync();
+
+                // 6-1. 내 가능 시간만 따로 추출
+                var mySchedules = availabilities
+                    .Where(ta => ta.Member.UserId == currentUserId)
+                    .Select(ta => ta.SlotStart)
+                    .ToList();
+
+                // 6-2. 전체 시간표 종합
+                var totalSchedules = availabilities
+                    .GroupBy(ta => ta.SlotStart)
+                    .Select(g => new TeamScheduleSlotDto
+                    {
+                        AvailableTime = g.Key,
+                        Count = g.Count(),
+                        AvailableMemberNames = g.Select(ta => ta.Member.User.Nickname).ToList()
+                    })
+                    .OrderBy(dto => dto.AvailableTime)
+                    .ToList();
+
+                // 7. 명세서에 기재된 최종 포맷 양식인 단일 "data" 래퍼 구조체 내부에 모든 서브 리스트를 탑재하여 최종 반환 진행
                 return new GetTeamMainResponse
                 {
                     IsSuccess = true,
                     Message = "팀 메인화면을 불러왔습니다.",
                     TeamName = team.TeamName, // main 브랜치의 실제 원본 DB 필드명인 'TeamName' 매핑 완비
                     TeamPosts = postsList,
-                    TeamMemberRoles = membersList
+                    TeamMemberRoles = membersList,
+                    TotalSchedules = totalSchedules,
+                    MySchedules = mySchedules
                 };
             }
             catch (Exception ex)
@@ -512,6 +539,62 @@ namespace TeamMatching.Web.Services
                 {
                     IsSuccess = false,
                     Message = $"역할 변경 중 서버 오류가 발생했습니다: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<SetAvailableTimesResponse> SetAvailableTimesAsync(int teamId, int currentUserId, SetAvailableTimesRequest request)
+        {
+            try
+            {
+                var teamMember = await _context.TeamMembers
+                    .FirstOrDefaultAsync(tm => tm.TeamId == teamId && tm.UserId == currentUserId);
+
+                if (teamMember == null)
+                {
+                    return new SetAvailableTimesResponse
+                    {
+                        IsSuccess = false,
+                        Message = "해당 팀의 소속원이 아니므로 가능 시간을 설정할 권한이 없습니다."
+                    };
+                }
+
+                var existingAvailabilities = await _context.TeamAvailabilities
+                    .Where(ta => ta.TeamId == teamId && ta.MemberId == teamMember.Id)
+                    .ToListAsync();
+                
+                if (existingAvailabilities.Any())
+                {
+                    _context.TeamAvailabilities.RemoveRange(existingAvailabilities);
+                }
+
+                if (request.AvailableTimes != null && request.AvailableTimes.Any())
+                {
+                    var newAvailabilities = request.AvailableTimes.Select(time => new TeamAvailability
+                    {
+                        TeamId = teamId,
+                        MemberId = teamMember.Id,
+                        SlotStart = time,
+                        CreatedAt = DateTime.Now
+                    }).ToList();
+
+                    _context.TeamAvailabilities.AddRange(newAvailabilities);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return new SetAvailableTimesResponse
+                {
+                    IsSuccess = true,
+                    Message = "가능 시간이 성공적으로 설정되었습니다."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new SetAvailableTimesResponse
+                {
+                    IsSuccess = false,
+                    Message = $"가능 시간 설정 중 서버 오류가 발생했습니다: {ex.Message}"
                 };
             }
         }
