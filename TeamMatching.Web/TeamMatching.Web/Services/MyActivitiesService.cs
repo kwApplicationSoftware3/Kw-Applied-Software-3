@@ -32,7 +32,7 @@ namespace TeamMatching.Web.Services
                     return new GetMyActivitiesResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 사용자 존재 확인
+                //사용자 존재 확인
                 var user = await _context.Users
                     .Include(u => u.MyPosts).ThenInclude(p => p.Applications)
                     .Include(u => u.MyApplications).ThenInclude(a => a.Post).ThenInclude(p => p.Author)
@@ -42,8 +42,8 @@ namespace TeamMatching.Web.Services
                 {
                     return new GetMyActivitiesResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
                 }
-
-                // 2. 내 글 목록
+                
+                //내 글 목록
                 List<MyPostDto> myPosts = new List<MyPostDto>();
                 foreach(var post in user.MyPosts)
                 {
@@ -58,13 +58,19 @@ namespace TeamMatching.Web.Services
                     myApplications.Add(new MyApplicationDto { PostId = application.PostId, Nickname = application.Post.Author.Nickname, 
                         Title = application.Post.Title, Status = application.Status, CreatedAt = application.CreatedAt });
                 }
-
+                //내 팀 목록)을 만들기 전에, 내가 이미 평가를 완료한 PostId 목록을 DB에서 미리 가져옴
+                var myReviewedPostIds = await _context.Reviews
+                    .Where(r => r.ReviewerId == userId)
+                    .Select(r => r.PostId)
+                    .Distinct()
+                    .ToListAsync();
                 // 4. 내 팀 목록
                 List<ActivityTeamDto> myTeams = new List<ActivityTeamDto>();
                 foreach (var membership in user.TeamMemberships)
                 {
                     bool isEnded = membership.Team.Post?.Status == PostStatus.Completed;
-                    myTeams.Add(new ActivityTeamDto { TeamId = membership.TeamId, TeamName = membership.Team.TeamName, PostId = membership.Team.PostId, IsEnded = isEnded });
+                    bool isEvaluated = myReviewedPostIds.Contains(membership.Team.PostId);
+                    myTeams.Add(new ActivityTeamDto { TeamId = membership.TeamId, TeamName = membership.Team.TeamName, PostId = membership.Team.PostId, IsEnded = isEnded, IsEvaluated = isEvaluated });
                 }
 
                 return new GetMyActivitiesResponse { IsSuccess = true, Message = "내 활동을 성공적으로 불러왔습니다.", MyPosts = myPosts, MyApplications = myApplications, MyTeams = myTeams };

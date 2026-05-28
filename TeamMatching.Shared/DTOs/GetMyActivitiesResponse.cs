@@ -39,6 +39,7 @@ namespace TeamMatching.Shared.DTOs
         public int PostId { get; set; }
 
         public bool IsEnded { get; set; } // 프로젝트 종료 여부 (PostStatus.Completed)
+        public bool IsEvaluated { get; set; } // 내가 이 팀을 이미 평가했는지 여부
     }
 
     public class GetMyActivitiesResponse
