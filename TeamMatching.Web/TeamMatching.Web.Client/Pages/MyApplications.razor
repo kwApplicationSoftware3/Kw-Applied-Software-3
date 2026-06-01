@@ -124,7 +124,7 @@
                                 {
                                     <button class="btn-primary-sm" @onclick='() => Nav.NavigateTo($"/team/{team.TeamId}")'>팀 공간 입장</button>
                                 }
-                                @if (team.IsEnded)
+                                @if (team.IsEnded && !team.IsEvaluated)
                                 {
                                     <button class="btn-outline" @onclick='() => Nav.NavigateTo($"/review/{team.TeamId}")'>팀원 평가</button>
                                 }
