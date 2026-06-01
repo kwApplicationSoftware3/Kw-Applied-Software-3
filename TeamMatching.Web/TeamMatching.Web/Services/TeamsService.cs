@@ -322,6 +322,7 @@ namespace TeamMatching.Web.Services
                 var post = await _context.TeamPosts
                     .Include(tp => tp.TeamPostComments)
                         .ThenInclude(tpc => tpc.User)
+                    .Include(tp => tp.Author)
                     .FirstOrDefaultAsync(p => p.Id == postId && p.TeamId == teamId);
 
                 if (post == null)
@@ -355,7 +356,8 @@ namespace TeamMatching.Web.Services
                     IsMyPost = post.AuthorId == currentUserId,
                     Comments = commentsList,
                     CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt
+                    UpdatedAt = post.UpdatedAt,
+                    NickName = post.Author != null ? post.Author.Nickname ?? "알 수 없는 사용자" : "알 수 없는 사용자"
                 };
             }
             catch (Exception ex)

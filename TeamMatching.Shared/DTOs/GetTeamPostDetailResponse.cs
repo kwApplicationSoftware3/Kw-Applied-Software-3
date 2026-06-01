@@ -33,5 +33,7 @@ namespace TeamMatching.Shared.DTOs
         public bool IsMyPost { get; set; }
         // 이 게시글에 등록된 전체 댓글 리스트 목록 배열
         public List<TeamPostCommentDto> Comments { get; set; } = new();
+        // 작성자 닉네임
+        public string NickName { get; set; } = string.Empty;
     }
 }
