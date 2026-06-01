@@ -80,6 +80,15 @@ namespace TeamMatching.Web.Client.Services
             return await response.Content.ReadFromJsonAsync<UpdateTeamRolesResponse>();
         }
 
+        // 가능시간 저장
+        public async Task<SetAvailableTimesResponse?> SetAvailableTimesAsync(int teamId, SetAvailableTimesRequest request)
+        {
+            await SetAuthorizationHeader();
+            var response = await Http.PostAsJsonAsync($"api/teams/{teamId}/timetable", request);
+            if (await HandleUnauthorizedAsync(response)) return null;
+            return await response.Content.ReadFromJsonAsync<SetAvailableTimesResponse>();
+        }
+
         // 프로젝트 종료
         public async Task<EndProjectResponse?> EndProjectAsync(int teamId)
         {

@@ -86,15 +86,33 @@
                         </div>
                         <div class="form-group full-span">
                             <label>관심 기술 스택</label>
-                            <div class="tag-selection">
-                                @if (availableTags != null)
-                                {
-                                    @foreach (var tag in availableTags)
+                            <div class="tag-search-wrapper">
+                                <div class="tag-input-box">
+                                    @foreach (var tagId in editModel.SelectedTagIds)
                                     {
-                                        <span class="tag @(editModel.SelectedTagIds.Contains(tag.Id) ? "active" : "")"
-                                              style="cursor:pointer;"
-                                              @onclick="() => ToggleTag(tag.Id)">#@tag.Name</span>
+                                        var tagName = availableTags?.FirstOrDefault(t => t.Id == tagId)?.Name ?? tagId.ToString();
+                                        <span class="tag-chip">
+                                            #@tagName
+                                            <button type="button" class="chip-remove" @onclick="() => RemoveTag(tagId)" @onclick:stopPropagation="true">×</button>
+                                        </span>
                                     }
+                                    <input class="tag-search-input"
+                                           placeholder="@(editModel.SelectedTagIds.Count == 0 ? "기술 스택 검색..." : "")"
+                                           @bind="profileTagSearch"
+                                           @bind:event="oninput"
+                                           @onfocus="() => showProfileDropdown = true"
+                                           @onblur="HideProfileDropdownDelayed" />
+                                </div>
+                                @if (showProfileDropdown && filteredProfileTags.Any())
+                                {
+                                    <div class="tag-dropdown">
+                                        @foreach (var tag in filteredProfileTags)
+                                        {
+                                            <div class="tag-dropdown-item" @onmousedown="() => AddTag(tag.Id)">
+                                                #@tag.Name
+                                            </div>
+                                        }
+                                    </div>
                                 }
                             </div>
                         </div>
@@ -179,6 +197,14 @@
     private string? editError;
     private string? editSuccess;
     private string? imageError;
+    private string profileTagSearch = "";
+    private bool showProfileDropdown = false;
+
+    private IEnumerable<Tag> filteredProfileTags =>
+        (availableTags ?? [])
+            .Where(t => editModel != null && !editModel.SelectedTagIds.Contains(t.Id) &&
+                        (string.IsNullOrEmpty(profileTagSearch) || t.Name.Contains(profileTagSearch, StringComparison.OrdinalIgnoreCase)))
+            .Take(10);
 
     protected override async Task OnInitializedAsync()
     {
@@ -238,11 +264,23 @@
         }
     }
 
-    private void ToggleTag(int tagId)
+    private void AddTag(int tagId)
     {
-        if (editModel == null) return;
-        if (editModel.SelectedTagIds.Contains(tagId)) editModel.SelectedTagIds.Remove(tagId);
-        else editModel.SelectedTagIds.Add(tagId);
+        if (editModel == null || editModel.SelectedTagIds.Contains(tagId)) return;
+        editModel.SelectedTagIds.Add(tagId);
+        profileTagSearch = "";
+        showProfileDropdown = false;
+    }
+
+    private void RemoveTag(int tagId)
+    {
+        editModel?.SelectedTagIds.Remove(tagId);
+    }
+
+    private async Task HideProfileDropdownDelayed()
+    {
+        await Task.Delay(150);
+        showProfileDropdown = false;
     }
 
     private async Task HandleUpdateSubmit()
@@ -310,8 +348,16 @@
     .form-group label { font-size: 0.875rem; font-weight: 600; color: #374151; }
     .form-control { padding: 0.65rem 0.875rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.95rem; width: 100%; }
     .full-span { grid-column: 1 / -1; }
-    .tag-selection { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem; border: 1px dashed #e5e7eb; }
-    .tag.active { background: #eff6ff; color: #1e40af; border: 1px solid #3b82f6; }
+    .tag-search-wrapper { position: relative; }
+    .tag-input-box { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-height: 2.5rem; padding: 0.35rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: white; cursor: text; }
+    .tag-input-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .tag-search-input { border: none; outline: none; font-size: 0.9rem; flex: 1; min-width: 100px; background: transparent; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 600; }
+    .chip-remove { background: none; border: none; cursor: pointer; color: #3b82f6; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; }
+    .chip-remove:hover { color: #dc2626; }
+    .tag-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 180px; overflow-y: auto; }
+    .tag-dropdown-item { padding: 0.5rem 0.875rem; font-size: 0.875rem; cursor: pointer; color: #374151; }
+    .tag-dropdown-item:hover { background: #eff6ff; color: #1e40af; }
     .edit-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; }
     .alert-danger { background: #fef2f2; color: #991b1b; padding: 0.65rem 0.875rem; border-radius: 0.5rem; font-size: 0.9rem; }
     .alert-success { background: #f0fdf4; color: #166534; padding: 0.65rem 0.875rem; border-radius: 0.5rem; font-size: 0.9rem; }

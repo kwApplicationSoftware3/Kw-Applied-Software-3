@@ -157,7 +157,7 @@
                                     {
                                         <div class="comment-item">
                                             <span class="comment-author">@c.Nickname</span>
-                                            <span class="comment-date">@c.CreatedAt.ToShortDateString()</span>
+                                            <span class="comment-date">@c.CreatedAt.ToString("yyyy.MM.dd HH:mm")</span>
                                             <p class="comment-body">@c.Content</p>
                                         </div>
                                     }
@@ -181,26 +181,84 @@
 
                 <!-- 시간표 -->
                 <div class="card timetable-card">
-                    <h3 class="section-title">🗓 시간표</h3>
-                    <div class="timetable-grid">
-                        <div class="timetable-header">
-                            <div class="time-col"></div>
-                            @foreach (var day in Days)
-                            {
-                                <div class="day-col">@day</div>
-                            }
-                        </div>
-                        @foreach (var hour in Hours)
+                    <div class="timetable-top">
+                        <h3 class="section-title">🗓 가능시간</h3>
+                        @if (!isEditingSchedule)
                         {
-                            <div class="timetable-row">
-                                <div class="time-col">@hour:00</div>
-                                @foreach (var day in Days)
-                                {
-                                    <div class="time-cell"></div>
-                                }
+                            <button class="btn-outline-sm" @onclick="StartEditSchedule">내 시간 입력</button>
+                        }
+                        else
+                        {
+                            <div style="display:flex;gap:0.4rem;">
+                                <button class="btn-primary-sm" @onclick="SaveSchedule" disabled="@isProcessing">저장</button>
+                                <button class="btn-outline-sm" @onclick="CancelEditSchedule">취소</button>
                             </div>
                         }
                     </div>
+
+                    @if (!string.IsNullOrEmpty(scheduleMessage))
+                    {
+                        <div class="alert-info" style="margin-bottom:0.5rem;font-size:0.8rem;">@scheduleMessage</div>
+                    }
+
+                    <div class="timetable-scroll">
+                        <div class="timetable-grid" style="grid-template-columns: 40px repeat(7, 1fr);">
+                            <!-- 헤더: 날짜 -->
+                            <div class="timetable-header-row" style="grid-template-columns: 40px repeat(7, 1fr);">
+                                <div class="time-col"></div>
+                                @foreach (var date in WeekDates)
+                                {
+                                    <div class="day-col @(date.Date == DateTime.Today ? "today-col" : "")">
+                                        <div>@date.ToString("ddd")</div>
+                                        <div style="font-size:0.7rem;color:#9ca3af;">@date.ToString("M/d")</div>
+                                    </div>
+                                }
+                            </div>
+                            <!-- 시간 행 -->
+                            @foreach (var hour in Hours)
+                            {
+                                <div class="timetable-row" style="grid-template-columns: 40px repeat(7, 1fr);">
+                                    <div class="time-col">@hour:00</div>
+                                    @foreach (var date in WeekDates)
+                                    {
+                                        var slotKey = new DateTime(date.Year, date.Month, date.Day, hour, 0, 0);
+                                        var hasTotal = scheduleMap.TryGetValue(slotKey, out var slot);
+                                        var count = hasTotal ? slot!.Count : 0;
+                                        var memberCount = team?.TeamMemberRoles.Count ?? 1;
+                                        var ratio = memberCount > 0 ? (double)count / memberCount : 0;
+                                        var isMine = isEditingSchedule ? editingSlots.Contains(slotKey) : myScheduleSet.Contains(slotKey);
+                                        var bgColor = count > 0 ? $"rgba(59,130,246,{ratio:F2})" : "transparent";
+                                        var borderStyle = isMine ? (isEditingSchedule ? "2px solid #1d4ed8" : "2px solid #1d4ed8") : "1px solid #f3f4f6";
+                                        <div class="time-cell @(isEditingSchedule ? "editable" : "")"
+                                             style="background:@bgColor;border:@borderStyle;position:relative;"
+                                             title="@(hasTotal && slot!.AvailableMemberNames.Count > 0 ? string.Join(", ", slot.AvailableMemberNames) : "")"
+                                             @onmousedown="() => OnCellMouseDown(slotKey)"
+                                             @onmouseenter="() => OnCellMouseEnter(slotKey)"
+                                             @onmouseup="OnCellMouseUp">
+                                            @if (count > 0 && !isEditingSchedule)
+                                            {
+                                                <span class="cell-count">@count</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!isEditingSchedule)
+                    {
+                        <div class="timetable-legend">
+                            <span class="legend-box" style="background:rgba(59,130,246,0.15);"></span><span>1명</span>
+                            <span class="legend-box" style="background:rgba(59,130,246,0.6);"></span><span>절반</span>
+                            <span class="legend-box" style="background:rgba(59,130,246,1);"></span><span>전원</span>
+                            <span class="legend-box" style="border:2px solid #1d4ed8;background:transparent;"></span><span>내 선택</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.78rem;color:#6b7280;margin-top:0.5rem;">셀을 클릭하거나 드래그해서 가능한 시간을 선택하세요.</p>
+                    }
                 </div>
 
                 <!-- 팀멤버 -->
@@ -290,13 +348,23 @@
     private bool isEditingRoles = false;
     private List<RoleEditModel>? roleEditModels;
 
-    private static readonly string[] Days = { "월", "화", "수", "목", "금", "토" };
     private static readonly int[] Hours = { 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+    private List<DateTime> WeekDates = [];
+
+    // 시간표 상태
+    private Dictionary<DateTime, TeamScheduleSlotDto> scheduleMap = new();
+    private HashSet<DateTime> myScheduleSet = new();
+    private bool isEditingSchedule = false;
+    private HashSet<DateTime> editingSlots = new();
+    private bool isDragging = false;
+    private bool dragAdding = true; // true=선택추가, false=선택해제
+    private string? scheduleMessage;
 
     private bool IsLeader => team?.TeamMemberRoles.Any(m => m.Role == TeamRole.Leader) == true;
 
     protected override async Task OnInitializedAsync()
     {
+        WeekDates = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(i)).ToList();
         await LoadTeam();
     }
 
@@ -306,10 +374,13 @@
         try
         {
             team = await TeamService.GetTeamMainAsync(TeamId);
+            if (team?.IsSuccess == true)
+            {
+                BuildScheduleMaps();
+            }
         }
         catch (Exception ex)
         {
-            // 응답 자체를 못 받은 경우 (네트워크 오류 등) 수동으로 실패 응답 생성
             team = new GetTeamMainResponse
             {
                 IsSuccess = false,
@@ -317,6 +388,79 @@
             };
         }
         finally { isLoading = false; }
+    }
+
+    private void BuildScheduleMaps()
+    {
+        scheduleMap = team!.TotalSchedules.ToDictionary(s => s.AvailableTime, s => s);
+        myScheduleSet = team!.MySchedules.ToHashSet();
+    }
+
+    // 시간표 편집 모드
+    private void StartEditSchedule()
+    {
+        editingSlots = new HashSet<DateTime>(myScheduleSet);
+        isEditingSchedule = true;
+        scheduleMessage = null;
+    }
+
+    private void CancelEditSchedule()
+    {
+        isEditingSchedule = false;
+        isDragging = false;
+        scheduleMessage = null;
+    }
+
+    private async Task SaveSchedule()
+    {
+        isProcessing = true;
+        scheduleMessage = null;
+        try
+        {
+            var result = await TeamService.SetAvailableTimesAsync(TeamId, new SetAvailableTimesRequest
+            {
+                AvailableTimes = editingSlots.OrderBy(d => d).ToList()
+            });
+            if (result?.IsSuccess == true)
+            {
+                isEditingSchedule = false;
+                isDragging = false;
+                await LoadTeam();
+                scheduleMessage = "가능시간이 저장되었습니다.";
+            }
+            else
+            {
+                scheduleMessage = result?.Message ?? "저장에 실패했습니다.";
+            }
+        }
+        catch { scheduleMessage = "서버 통신 오류."; }
+        finally { isProcessing = false; }
+    }
+
+    // 드래그 셀 선택
+    private void OnCellMouseDown(DateTime slot)
+    {
+        if (!isEditingSchedule) return;
+        isDragging = true;
+        dragAdding = !editingSlots.Contains(slot);
+        ToggleSlot(slot);
+    }
+
+    private void OnCellMouseEnter(DateTime slot)
+    {
+        if (!isEditingSchedule || !isDragging) return;
+        ToggleSlot(slot);
+    }
+
+    private void OnCellMouseUp()
+    {
+        isDragging = false;
+    }
+
+    private void ToggleSlot(DateTime slot)
+    {
+        if (dragAdding) editingSlots.Add(slot);
+        else editingSlots.Remove(slot);
     }
 
     private async Task LoadPostDetail(int postId)
@@ -552,13 +696,22 @@
 
     /* 오른쪽: 시간표 */
     .timetable-card { padding: 1.25rem; }
-    .timetable-grid { overflow-x: auto; }
-    .timetable-header, .timetable-row { display: grid; grid-template-columns: 40px repeat(6, 1fr); }
-    .timetable-header { font-weight: 700; font-size: 0.8rem; text-align: center; background: #f9fafb; border-radius: 0.4rem; padding: 0.4rem 0; margin-bottom: 2px; }
-    .day-col { text-align: center; color: #374151; }
-    .time-col { font-size: 0.7rem; color: #9ca3af; display: flex; align-items: center; justify-content: center; }
+    .timetable-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .timetable-top .section-title { margin: 0; }
+    .timetable-scroll { overflow-x: auto; }
+    .timetable-grid { display: flex; flex-direction: column; min-width: 320px; }
+    .timetable-header-row, .timetable-row { display: grid; }
+    .timetable-header-row { font-weight: 700; font-size: 0.75rem; text-align: center; background: #f9fafb; border-radius: 0.4rem; padding: 0.35rem 0; margin-bottom: 2px; }
+    .day-col { text-align: center; color: #374151; padding: 0.1rem 0; }
+    .today-col { color: #2563eb; font-weight: 800; }
+    .time-col { font-size: 0.65rem; color: #9ca3af; display: flex; align-items: center; justify-content: center; }
     .timetable-row { border-bottom: 1px solid #f3f4f6; }
-    .time-cell { border-left: 1px solid #f3f4f6; min-height: 22px; }
+    .time-cell { min-height: 22px; box-sizing: border-box; transition: background 0.1s; }
+    .time-cell.editable { cursor: pointer; user-select: none; }
+    .time-cell.editable:hover { filter: brightness(0.92); }
+    .cell-count { position: absolute; top: 1px; right: 2px; font-size: 0.6rem; font-weight: 700; color: white; text-shadow: 0 0 2px rgba(0,0,0,0.4); }
+    .timetable-legend { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.75rem; color: #6b7280; flex-wrap: wrap; }
+    .legend-box { display: inline-block; width: 14px; height: 14px; border-radius: 2px; vertical-align: middle; }
 
     /* 팀멤버 */
     .member-card { padding: 1.25rem; }
