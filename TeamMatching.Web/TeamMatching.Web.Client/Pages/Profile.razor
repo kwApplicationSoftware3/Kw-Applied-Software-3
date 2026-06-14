@@ -5,6 +5,7 @@
 @using TeamMatching.Web.Client.Services
 @using TeamMatching.Shared.DTOs
 @using TeamMatching.Shared.Entities
+@using TeamMatching.Shared.Enums
 @inject ProfileClientService ProfileService
 @inject PostClientService PostService
 @inject NavigationManager Nav
@@ -177,8 +178,8 @@
                         {
                             <li>
                                 <strong>@project.TeamName</strong>
-                                <span>역할: @project.Role (@(project.Position ?? "미지정"))</span>
-                                <span class="status-done">@project.Status</span>
+                                <span>역할: @(project.Role == TeamRole.Leader ? "팀장" : "팀원") (@(string.IsNullOrWhiteSpace(project.Position) ? "미지정" : project.Position))</span>
+                                <span class="status-done">@StatusToKorean(project.Status)</span>
                             </li>
                         }
                     </ul>
@@ -189,6 +190,14 @@
 </div>
 
 @code {
+    private static string StatusToKorean(PostStatus status) => status switch
+    {
+        PostStatus.Recruiting => "모집중",
+        PostStatus.InProgress => "진행중",
+        PostStatus.Completed => "종료",
+        _ => status.ToString()
+    };
+
     private GetProfileResponse? profile;
     private List<Tag>? availableTags;
     private bool isEditing = false;
