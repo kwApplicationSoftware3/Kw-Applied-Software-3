@@ -136,6 +136,7 @@ namespace TeamMatching.Web.Services
                     {
                         teamMembers = team.TeamMembers.Select(tm => new TeamMemberRolePositionDto
                         {
+                            TeamMemberNickname = tm.User != null ? tm.User.Nickname : "알 수 없는 사용자",
                             TeamMemberRole = tm.Role,
                             TeamMemberPosition = tm.Position
                         }).ToList();
@@ -149,6 +150,8 @@ namespace TeamMatching.Web.Services
                     Message = "모집 글 상세 정보를 성공적으로 불러왔습니다.",
                     Title = post.Title,
                     Content = post.Content,
+                    Summary = post.Summary,
+                    Category = post.Category,
                     CurrentMembers = post.CurrentMembers,
                     MaxMembers = post.MaxMembers,
                     // PostTags 배열에서 TagId 숫자만 뽑아서 리스트로 변환합니다.
