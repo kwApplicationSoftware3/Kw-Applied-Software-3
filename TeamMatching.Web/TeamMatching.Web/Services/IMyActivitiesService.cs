@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 
 namespace TeamMatching.Web.Services
 {
-    /// <summary>
-    /// 내 활동 관련 비즈니스 로직 인터페이스
-    /// </summary>
+    // 내 활동 관련 비즈니스 로직 인터페이스
     public interface IMyActivitiesService
     {
         // 내 활동 관리

@@ -12,8 +12,8 @@ namespace TeamMatching.Shared.DTOs
         public int ApplicationId { get; set; }             // 지원서 고유 ID
         public string Nickname { get; set; } = string.Empty; // 지원자 닉네임
         public string? Bio { get; set; }                     // 지원자 기본 자기소개
-        public string Message { get; set; } = string.Empty;  // 지원 메시지 (프로젝트별 각오 등)
-        public List<int> SelectedTagIds { get; set; } = new(); // 지원자가 보유한 기술 스택 ID 목록
+        public string Message { get; set; } = string.Empty;  // 지원 메시지
+        public List<int> SelectedTagIds { get; set; } = new(); // 보유 기술 스택
         public DateTime CreatedAt { get; set; }              // 지원 일시
         public ApplicationStatus Status { get; set; }        // 지원 상태
         public float ReliabilityScore { get; set; }          // 신뢰도 점수

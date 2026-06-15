@@ -13,9 +13,7 @@ using BCrypt.Net;
 
 namespace TeamMatching.Web.Services
 {
-    /// <summary>
-    /// 인증 관련 비즈니스 로직 구현체
-    /// </summary>
+    // 인증 관련 비즈니스 로직 구현체
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
@@ -25,11 +23,12 @@ namespace TeamMatching.Web.Services
             _context = context;
         }
 
+        // 회원가입 처리
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
             try
             {
-                // 1. 이메일 중복 체크
+                // 이메일 중복 체크
                 var existingUser = await _context.Users.AnyAsync(u => u.Email == request.Email);
                 if (existingUser)
                 {
@@ -37,7 +36,7 @@ namespace TeamMatching.Web.Services
                 }
                 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-                // 2. 유저 엔티티 생성
+                // 유저 엔티티 생성
                 var user = new User
                 {
                     Email = request.Email,
@@ -49,7 +48,7 @@ namespace TeamMatching.Web.Services
                     CreatedAt = DateTime.Now
                 };
 
-                // 3. 선택한 태그(기술 스택) 매핑
+                // 선택 태그 매핑
                 if (request.SelectedTagIds != null && request.SelectedTagIds.Any())
                 {
                     foreach (var tagId in request.SelectedTagIds)
@@ -68,11 +67,13 @@ namespace TeamMatching.Web.Services
                 return new RegisterResponse { IsSuccess = false, Message = $"회원가입 중 오류가 발생했습니다: {ex.Message}" };
             }
         }
+
+        // 로그인 처리
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
             try
             {
-                // 1. 이메일로 사용자 조회
+                // 사용자 조회
                 var user = await _context.Users
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
@@ -82,13 +83,13 @@ namespace TeamMatching.Web.Services
                     return new LoginResponse { IsSuccess = false, Message = "가입되지 않은 이메일입니다." };
                 }
 
-                // 2. 비밀번호 검증
+                // 비밀번호 검증
                 if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
                     return new LoginResponse { IsSuccess = false, Message = "비밀번호가 일치하지 않습니다." };
                 }
 
-                // 3. JWT 생성
+                // JWT 생성
                 var secret = Environment.GetEnvironmentVariable("JWT_SECRET");
                 var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TeamMatchingWeb"; 
                 var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TeamMatchingUsers"; 

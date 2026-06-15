@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 
 namespace TeamMatching.Web.Controllers
 {
-    /// <summary>
-    /// 인증 관련 API 컨트롤러
-    /// </summary>
+    // 인증 관련 API 컨트롤러
     [ApiController]
     [Route("api/[controller]")] // api/auth
     public class AuthController : ControllerBase
@@ -19,13 +17,11 @@ namespace TeamMatching.Web.Controllers
             _authService = authService;
         }
 
-        /// <summary>
-        /// 회원가입 엔드포인트
-        /// </summary>
+        // 회원가입 처리 엔드포인트
         [HttpPost("signup")]
         public async Task<ActionResult<RegisterResponse>> SignUp(RegisterRequest request)
         {
-            // 모델 유효성 검사 (DTO의 [Required] 등 체크)
+            // 모델 유효성 검증
             if (!ModelState.IsValid)
             {
                 return BadRequest(new RegisterResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
@@ -40,10 +36,8 @@ namespace TeamMatching.Web.Controllers
 
             return BadRequest(result);
         }
-
-        /// <summary>
-        /// 로그인 엔드포인트
-        /// </summary>
+        
+        // 로그인 처리 엔드포인트
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
         {
@@ -59,7 +53,6 @@ namespace TeamMatching.Web.Controllers
                 return Ok(result);
             }
 
-            // 인증 실패는 401 반환이 자연스럽습니다.
             return Unauthorized(result);
         }
     }

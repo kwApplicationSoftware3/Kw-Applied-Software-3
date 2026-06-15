@@ -8,9 +8,9 @@ namespace TeamMatching.Shared.DTOs
 {
     public class CreateTeamPostResponse
     {
-        // 작성 성공 여부
+        // 성공 여부
         public bool IsSuccess { get; set; }
-        // 처리 결과 메시지 ("게시글 작성이 완료되었습니다.")
+        // 결과 메시지
         
         public string Message { get; set; } = string.Empty;
     }

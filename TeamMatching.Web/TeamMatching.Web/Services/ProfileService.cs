@@ -5,6 +5,7 @@ using TeamMatching.Web.Data;
 
 namespace TeamMatching.Web.Services
 {
+    // 내 프로필 관련 비즈니스 로직 구현체
     public class ProfileService : IProfileService
     {
         private readonly ApplicationDbContext _context;
@@ -14,6 +15,7 @@ namespace TeamMatching.Web.Services
             _context = context;
         }
 
+        // 프로필 불러오기
         public async Task<GetProfileResponse> GetProfileAsync(int UserId)
         {
             try
@@ -23,12 +25,12 @@ namespace TeamMatching.Web.Services
                     return new GetProfileResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 유저 존재 확인
+                // 사용자 조회
                 var user = await _context.Users
                     .Include(u => u.UserTags)
-                    .Include(u => u.TeamMemberships)         // 내 팀 정보 조인
-                    .ThenInclude(tm => tm.Team)              // 팀 기본 정보 조인
-                    .ThenInclude(t => t.Post)                // 팀과 연결된 모집글(상태 확인용) 조인
+                    .Include(u => u.TeamMemberships)         // 팀 정보 병합
+                    .ThenInclude(tm => tm.Team)              // 팀 기본 정보 병합
+                    .ThenInclude(t => t.Post)                // 모집글 정보 병합
                     .FirstOrDefaultAsync(u => u.Id == UserId);
                 if (user == null)
                 {
@@ -59,6 +61,8 @@ namespace TeamMatching.Web.Services
                 return new GetProfileResponse { IsSuccess = false, Message = $"내 정보를 불러오던 중 오류가 발생했습니다: {ex.Message}" };
             }
         }
+
+        // 프로필 업데이트
         public async Task<UpdateProfileResponse> UpdateProfileAsync(UpdateProfileRequest request, int userId)
         {
             try
@@ -68,7 +72,7 @@ namespace TeamMatching.Web.Services
                     return new UpdateProfileResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 사용자 존재 확인
+                // 사용자 확인
                 var user = await _context.Users
                     .Include(u => u.UserTags)
                     .FirstOrDefaultAsync(u => u.Id == userId);
@@ -95,7 +99,7 @@ namespace TeamMatching.Web.Services
                 {
                     user.UserTags.Clear();
 
-                    //DB에 실제 존재하는 Tag인지 확인 후 추가
+                    // 태그 유효성 검사 및 갱신
                     var validTagIds = await _context.Tags
                         .Where(t => request.SelectedTagIds.Contains(t.Id))
                         .Select(t => t.Id)

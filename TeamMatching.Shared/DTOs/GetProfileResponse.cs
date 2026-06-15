@@ -8,11 +8,11 @@ namespace TeamMatching.Shared.DTOs
     {
         public string TeamName { get; set; } = string.Empty;// 팀명
 
-        public TeamRole Role { get; set; } = TeamRole.Member; // 팀 내 역할 (팀장/팀원)
+        public TeamRole Role { get; set; } = TeamRole.Member; // 팀 내 역할
 
-        public string? Position { get; set; } // 팀 내 구체적 역할 (백엔드, 프론트엔드, 디자이너 등)
+        public string? Position { get; set; } // 팀 내 구체적 역할
 
-        public PostStatus Status { get; set; } // 진행 상태 
+        public PostStatus Status { get; set; } // 진행 상태
     }
     public class GetProfileResponse
     {
@@ -21,7 +21,7 @@ namespace TeamMatching.Shared.DTOs
         public string Message { get; set; } = string.Empty; // 결과 메시지
 
         [Required]
-        public string Nickname { get; set; } = string.Empty; // 활동 닉네임
+        public string Nickname { get; set; } = string.Empty; // 닉네임
 
         public string? ProfileImageUrl { get; set; } // 프로필 이미지 경로
 
@@ -31,7 +31,7 @@ namespace TeamMatching.Shared.DTOs
         public float ContributionScore { get; set; } = 0; // 평균 기여도 점수
         public float CommunicationScore { get; set; } = 0; // 평균 소통 점수
 
-        public List<int> UserTagIds { get; set; } = new List<int>(); // 보유 기술 스택
-        public List<ProfileTeamDto> MyTeams { get; set; } = new List<ProfileTeamDto>(); // 최근 참여 프로젝트
+        public List<int> UserTagIds { get; set; } = new List<int>(); // 기술 스택
+        public List<ProfileTeamDto> MyTeams { get; set; } = new List<ProfileTeamDto>(); // 참여 프로젝트
     }
 }

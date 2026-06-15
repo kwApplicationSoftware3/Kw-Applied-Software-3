@@ -19,23 +19,23 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddControllers(); // API 컨트롤러 기능 활성화
 
-// HttpClient 등록 (서버 측에서도 CustomAuthenticationStateProvider 등에서 필요로 함)
+// HttpClient 등록
 builder.Services.AddScoped(sp => new HttpClient 
 { 
     BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:7141") 
 });
 
-// 인증 상태 관리 서비스 등록 (서버/SSR용)
+// 인증 상태 관리 서비스 등록
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-// 클라이언트 서비스 등록 (SSR 시 필요)
+// 클라이언트 서비스 등록
 builder.Services.AddScoped<AuthClientService>();
 builder.Services.AddScoped<PostClientService>();
 builder.Services.AddScoped<ActivityClientService>();
 builder.Services.AddScoped<ProfileClientService>();
 
-// 의존성 주입(DI) 등록
+// 의존성 주입 등록
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();

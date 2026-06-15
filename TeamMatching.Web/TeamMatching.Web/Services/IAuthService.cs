@@ -3,15 +3,13 @@ using System.Threading.Tasks;
 
 namespace TeamMatching.Web.Services
 {
-    /// <summary>
-    /// 인증 관련 비즈니스 로직 인터페이스
-    /// </summary>
+    // 인증 관련 비즈니스 로직 인터페이스
     public interface IAuthService
     {
-        /// <summary>
-        /// 회원가입 처리
-        /// </summary>
+        // 회원가입 처리
         Task<RegisterResponse> RegisterAsync(RegisterRequest request);
+
+        // 로그인 처리
         Task<LoginResponse> LoginAsync(LoginRequest request);
     }
 }

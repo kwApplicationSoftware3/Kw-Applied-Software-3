@@ -11,9 +11,7 @@ using TeamMatching.Web.Data;
 
 namespace TeamMatching.Web.Services
 {
-    /// <summary>
-    /// 내 활동 관련 로직 구현체
-    /// </summary>
+    // 내 활동 관련 비지니스 로직 구현체
     public class MyActivitiesService : IMyActivitiesService
     {
         private readonly ApplicationDbContext _context;
@@ -23,6 +21,7 @@ namespace TeamMatching.Web.Services
             _context = context;
         }
 
+        // 내 활동 관리
         public async Task<GetMyActivitiesResponse> GetMyActivitiesAsync(int userId)
         {
             try
@@ -32,7 +31,7 @@ namespace TeamMatching.Web.Services
                     return new GetMyActivitiesResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                //사용자 존재 확인
+                // 사용자 확인
                 var user = await _context.Users
                     .Include(u => u.MyPosts).ThenInclude(p => p.Applications)
                     .Include(u => u.MyApplications).ThenInclude(a => a.Post).ThenInclude(p => p.Author)
@@ -43,7 +42,7 @@ namespace TeamMatching.Web.Services
                     return new GetMyActivitiesResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
                 }
                 
-                //내 글 목록
+                // 등록 게시글 목록 조회
                 List<MyPostDto> myPosts = new List<MyPostDto>();
                 foreach(var post in user.MyPosts)
                 {
@@ -51,20 +50,20 @@ namespace TeamMatching.Web.Services
                         CreatedAt = post.CreatedAt });
                 }
 
-                // 3. 내 지원서 목록
+                // 제출 지원서 목록 조회
                 List<MyApplicationDto> myApplications = new List<MyApplicationDto>();
                 foreach(var application in user.MyApplications)
                 {
                     myApplications.Add(new MyApplicationDto { PostId = application.PostId, Nickname = application.Post.Author.Nickname, 
                         Title = application.Post.Title, Status = application.Status, CreatedAt = application.CreatedAt });
                 }
-                //내 팀 목록)을 만들기 전에, 내가 이미 평가를 완료한 PostId 목록을 DB에서 미리 가져옴
+                // 소속 팀 목록 조회
                 var myReviewedPostIds = await _context.Reviews
                     .Where(r => r.ReviewerId == userId)
                     .Select(r => r.PostId)
                     .Distinct()
                     .ToListAsync();
-                // 4. 내 팀 목록
+                // 소속 팀 목록 조회
                 List<ActivityTeamDto> myTeams = new List<ActivityTeamDto>();
                 foreach (var membership in user.TeamMemberships)
                 {
@@ -81,7 +80,7 @@ namespace TeamMatching.Web.Services
             }
         }
 
-
+        // 팀원평가
         public async Task<GetReviewTargetResponse> GetReviewTargetAsync(int teamId, int userId)
         {
             try
@@ -91,17 +90,17 @@ namespace TeamMatching.Web.Services
                     return new GetReviewTargetResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 사용자 존재 확인
+                // 사용자 확인
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                 {
                     return new GetReviewTargetResponse { IsSuccess = false, Message = "사용자 정보를 찾을 수 없습니다." };
                 }
 
-                // 2. 평가할 팀 확인
+                // 대상 팀 확인
                 var team = await _context.Teams
                     .Include(t => t.TeamMembers)
-                    .ThenInclude(tm => tm.User) // 팀원의 유저 정보(닉네임 등)까지 조인해서 가져오기
+                    .ThenInclude(tm => tm.User) // 사용자 정보 병합 조회
                     .FirstOrDefaultAsync(t => t.Id == teamId);
                 if (team == null)
                 {
@@ -131,7 +130,7 @@ namespace TeamMatching.Web.Services
             }
         }
 
-     
+        // 팀원평가 제출
         public async Task<SubmitReviewResponse> SubmitReviewAsync(int teamId, SubmitReviewRequest request, int userId)
         {
             try
@@ -141,7 +140,7 @@ namespace TeamMatching.Web.Services
                     return new SubmitReviewResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 사용자 존재 확인
+                // 사용자 확인
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                 {
@@ -155,7 +154,7 @@ namespace TeamMatching.Web.Services
                 }
                 int currentPostId = team.PostId;
 
-                // 2. 올바른 평가인지 확인
+                // 평가 유효성 검증
                 var targetUserIds = request.Reviews.Select(r => r.UserId).ToList();
                 if (targetUserIds.Count != targetUserIds.Distinct().Count())
                 {
@@ -178,14 +177,14 @@ namespace TeamMatching.Web.Services
                     .Select(tm => tm.UserId)
                     .ToListAsync();
 
-                // 요청 들어온 대상 중 우리 팀원이 아닌 사람이 섞여 있는지 검사
+                // 외부 인원 포함 여부 검증
                 bool containsInvalidUser = targetUserIds.Except(validTeamMembers).Any();
                 if (containsInvalidUser)
                 {
                     return new SubmitReviewResponse { IsSuccess = false, Message = "해당 팀의 팀원이 아닌 사용자가 평가 대상에 포함되어 있습니다." };
                 }
 
-                // 3. Reivews에 추가
+                // 평가 데이터 저장
                 foreach (var review in request.Reviews)
                 {
                     _context.Reviews.Add(new Review { PostId = currentPostId, ReviewerId = userId, RevieweeId = review.UserId, ReliabilityScore = review.ReliabilityScore, 
@@ -193,7 +192,7 @@ namespace TeamMatching.Web.Services
 
                 }
 
-               // 4. 유저 평균 점수 업데이트
+               // 유저 평가 점수 갱신
                 var usersToUpdate = await _context.Users.Include(u => u.ReceivedReviews).Where(u => targetUserIds.Contains(u.Id)).ToListAsync();
                 foreach(var member in usersToUpdate)
                 {
@@ -214,7 +213,7 @@ namespace TeamMatching.Web.Services
             }
         }
 
-        
+        // 모집글 모집 종료
         public async Task<ClosePostResponse> ClosePostAsync(ClosePostRequest request, int userId)
         {
             try
@@ -224,7 +223,7 @@ namespace TeamMatching.Web.Services
                     return new ClosePostResponse { IsSuccess = false, Message = "사용자 정보가 유효하지 않습니다." };
                 }
 
-                // 1. 사용자 존재 확인
+                // 사용자 확인
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                 {
@@ -240,13 +239,13 @@ namespace TeamMatching.Web.Services
                     return new ClosePostResponse { IsSuccess = false, Message = "모집 글 정보를 찾을 수 없습니다." };
                 }
 
-                // [보안] 글 작성자 본인만 모집을 마감할 수 있도록 검증
+                // 글 작성자 본인만 모집을 마감할 수 있도록 검증
                 if (post.AuthorId != userId)
                 {
                     return new ClosePostResponse { IsSuccess = false, Message = "모집글을 마감할 권한이 없습니다." };
                 }
 
-                // 2. 모집 상태 진행중으로 변경
+                // 모집 상태 갱신
                 post.Status = PostStatus.InProgress;
 
                 var newTeam = new Team
@@ -261,7 +260,7 @@ namespace TeamMatching.Web.Services
                 {
                     UserId = post.AuthorId,
                     Role = TeamRole.Leader,
-                    // Position은 초기에는 비워두거나(null) 기본값 처리
+                    // 초기 직무 값 설정
                 });
 
                 var acceptedApplicants = post.Applications
@@ -274,11 +273,11 @@ namespace TeamMatching.Web.Services
                     {
                         UserId = applicant.UserId,
                         Role = TeamRole.Member,
-                        // Position은 초기에는 비워두거나(null) 기본값 처리
+                        // 초기 직무 값 설정
                     });
                 }
 
-                // 수락되지 않은(Pending 상태인) 나머지 지원자들 일괄 거절 처리
+                // 대기 지원서 일괄 거절
                 var pendingApplications = post.Applications
                     .Where(a => a.Status == ApplicationStatus.Pending)
                     .ToList();

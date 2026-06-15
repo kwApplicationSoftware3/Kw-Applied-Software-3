@@ -13,6 +13,7 @@ namespace TeamMatching.Shared.Entities
 
         // 관계 설정
         public ICollection<UserTag> UserTags { get; set; } = new List<UserTag>(); // 이 기술을 가진 유저들
+
         public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>(); // 이 기술이 필요한 글들
     }
 }

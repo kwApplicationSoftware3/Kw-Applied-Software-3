@@ -8,25 +8,23 @@ using System.Threading.Tasks;
 
 namespace TeamMatching.Shared.Entities
 {
-    //팀 내부 전용 게시판   
     public class TeamPost
     {
         [Key]
-        public int Id { get; set; } // 데이터베이스 고유 번호 (PK - DTO의 teamPostId로 변환됨)
+        public int Id { get; set; } // 팀 게시글 고유 번호
 
         [Required]
-        public int TeamId { get; set; } // 게시글이 소속된 팀의 외래키 (FK)
+        public int TeamId { get; set; } // 게시글이 소속된 팀의 외래키
 
         [ForeignKey("TeamId")]
         public Team? Team { get; set; } // 소속 팀과의 관계 설정을 위한 네비게이션 프로퍼티
 
-        //본인 글 여부(isMyPost)를 판단하기 위해 작성자 유저 ID를 추가합니다.
         [Required]
-        public int AuthorId { get; set; }
+        public int AuthorId { get; set; } // 작성자 ID
 
         [ForeignKey("AuthorId")]
-        public User? Author { get; set; }
-        
+        public User? Author { get; set; } // 작성자 정보
+
         [Required]
         [MaxLength(100)]
         public string Title { get; set; } = string.Empty; // 게시글 제목

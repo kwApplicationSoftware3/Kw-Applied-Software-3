@@ -18,9 +18,9 @@ namespace TeamMatching.Shared.DTOs
         [Required(ErrorMessage = "요약 내용을 입력해주세요.")]
         public string Summary { get; set; } = string.Empty;
 
-        public string? Category { get; set; } //프로젝트 분야
+        public string? Category { get; set; } // 분야
         public int MaxMembers { get; set; }
 
-        public List<int> SelectedTagIds { get; set; } = new(); // 수정된 기술 스택 ID 목록
+        public List<int> SelectedTagIds { get; set; } = new(); // 기술 스택 목록
     }
 }

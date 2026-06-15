@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace TeamMatching.Web.Controllers
 {
-    /// <summary>
-    /// 내 활동 관련 API 컨트롤러
-    /// </summary>
+    // 내 활동 관련 API 컨트롤러
     [ApiController]
     [Route("api/my-activities")] // api/my-activities
     public class MyActivitiesController : ControllerBase
@@ -26,12 +24,12 @@ namespace TeamMatching.Web.Controllers
         [HttpGet]
         public async Task<ActionResult<GetMyActivitiesResponse>> GetMyActivities()
         {
-            // 모델 유효성 검사 (DTO의 [Required] 등 체크)
+            // 모델 유효성 검증
             if (!ModelState.IsValid)
             {
                 return BadRequest(new GetMyActivitiesResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
             }
-            // Claims에서 사용자 ID 추출
+            // 사용자 식별자 추출
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
             if (idClaim == null || !int.TryParse(idClaim.Value, out var userId))
             {
@@ -48,17 +46,17 @@ namespace TeamMatching.Web.Controllers
             return BadRequest(result);
         }
 
-        // 모집 종료 엔드포인트
+        // 모집글 모집 종료 엔드포인트
         [Authorize]
         [HttpPost]
         public async Task<ActionResult<ClosePostResponse>> ClosePost([FromBody] ClosePostRequest request)
         {
-            // 모델 유효성 검사 (DTO의 [Required] 등 체크)
+            // 모델 유효성 검증
             if (!ModelState.IsValid)
             {
                 return BadRequest(new ClosePostResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
             }
-            // Claims에서 사용자 ID 추출
+            // 사용자 식별자 추출
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
             if (idClaim == null || !int.TryParse(idClaim.Value, out var userId))
             {
@@ -80,12 +78,12 @@ namespace TeamMatching.Web.Controllers
         [HttpGet("review/{teamId}")]
         public async Task<ActionResult<GetReviewTargetResponse>> GetReviewTarget(int teamId)
         {
-            // 모델 유효성 검사 (DTO의 [Required] 등 체크)
+            // 모델 유효성 검증
             if (!ModelState.IsValid)
             {
                 return BadRequest(new GetReviewTargetResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
             }
-            // Claims에서 사용자 ID 추출
+            // 사용자 식별자 추출
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
             if (idClaim == null || !int.TryParse(idClaim.Value, out var userId))
             {
@@ -107,12 +105,12 @@ namespace TeamMatching.Web.Controllers
         [HttpPost("review/{teamId}")]
         public async Task<ActionResult<SubmitReviewResponse>> SubmitReview(int teamId, [FromBody] SubmitReviewRequest request)
         {
-            // 모델 유효성 검사 (DTO의 [Required] 등 체크)
+            // 모델 유효성 검증
             if (!ModelState.IsValid)
             {
                 return BadRequest(new SubmitReviewResponse { IsSuccess = false, Message = "입력 데이터 형식이 올바르지 않습니다." });
             }
-            // Claims에서 사용자 ID 추출
+            // 사용자 식별자 추출
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
             if (idClaim == null || !int.TryParse(idClaim.Value, out var userId))
             {

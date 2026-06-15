@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TeamMatching.Shared.DTOs
 {
-    /// <summary>
-    /// 로그인 요청 정보를 담는 DTO
-    /// </summary>
     public class LoginRequest
     {
         [Required(ErrorMessage = "이메일은 필수 입력 항목입니다.")]

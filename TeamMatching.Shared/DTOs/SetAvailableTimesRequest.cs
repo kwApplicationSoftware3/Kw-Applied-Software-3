@@ -5,6 +5,6 @@ namespace TeamMatching.Shared.DTOs
 {
     public class SetAvailableTimesRequest
     {
-        public List<DateTime> AvailableTimes { get; set; } = new List<DateTime>(); // 가능 시간
+        public List<DateTime> AvailableTimes { get; set; } = new List<DateTime>();
     }
 }

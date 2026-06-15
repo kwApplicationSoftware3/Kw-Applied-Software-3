@@ -20,6 +20,6 @@ namespace TeamMatching.Shared.DTOs
     public class SubmitReviewRequest
     {
         [Required]
-        public List<ReviewDto> Reviews { get; set; } = new List<ReviewDto>(); // 팀원 평가 리스트
+        public List<ReviewDto> Reviews { get; set; } = new List<ReviewDto>(); // 평가 목록
     }
 }

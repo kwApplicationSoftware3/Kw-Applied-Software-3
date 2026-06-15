@@ -9,9 +9,7 @@ using System.Threading.Tasks;
 
 namespace TeamMatching.Web.Services
 {
-    /// <summary>
-    /// 인증 관련 비즈니스 로직 구현체ㅡ인글작성
-    /// </summary>
+    // 모집글 관련 비지니스 로직 구현체
     public class PostsService : IPostsService
     {
         private readonly ApplicationDbContext _context;
@@ -21,6 +19,7 @@ namespace TeamMatching.Web.Services
             _context = context;
         }
 
+        // 글 작성 처리
         public async Task<CreatePostResponse> CreatePostAsync(CreatePostRequest request, int authorId)
         {
             try
@@ -30,14 +29,14 @@ namespace TeamMatching.Web.Services
                     return new CreatePostResponse { IsSuccess = false, Message = "작성자 정보가 유효하지 않습니다." };
                 }
                 
-                // 1. 작성자 존재 확인
+                // 작성자 확인
                 var author = await _context.Users.FindAsync(authorId);
                 if (author == null)
                 {
                     return new CreatePostResponse { IsSuccess = false, Message = "작성자 정보를 찾을 수 없습니다." };
                 }
 
-                // 2. 게시글 엔티티 생성
+                // 게시글 데이터 초기화
                 var post = new Post
                 {
                     AuthorId = authorId,
@@ -46,10 +45,10 @@ namespace TeamMatching.Web.Services
                     Summary = request.Summary!,
                     Category = request.Category,
                     MaxMembers = request.MaxMembers,
-                    CurrentMembers = 1, // 작성자(팀장) 포함
+                    CurrentMembers = 1, // 팀장 인원 카운트 반영
                 };
 
-                // 3. 선택한 태그(기술 스택) 매핑
+                // 선택 태그 매핑
                 if (request.SelectedTagIds != null && request.SelectedTagIds.Any())
                 {
                     foreach (var tagId in request.SelectedTagIds)
@@ -68,11 +67,13 @@ namespace TeamMatching.Web.Services
                 return new CreatePostResponse { IsSuccess = false, Message = $"게시글 생성 중 오류가 발생했습니다: {ex.Message}" };
             }
         }
+
+        // 글 목록 조회
         public async Task<GetPostsResponse> GetPostsAsync()
         {
             try
             {
-                // DB에서 글 목록을 최신순으로 가져와서 DTO 형태로 변환
+                // 게시글 목록 조회 및 포맷팅
                 var posts = await _context.Posts
                     .OrderByDescending(p => p.CreatedAt)
                     .Select(p => new PostListItemDto
@@ -105,20 +106,19 @@ namespace TeamMatching.Web.Services
                 };
             }
         }
-        /// <summary>
-        /// 게시글 상세 조회 서비스 로직
-        /// </summary>
+
+        // 특정 게시글의 상세 정보 조회
         public async Task<GetPostDetailResponse> GetPostDetailAsync(int postId, int? currentUserId)
         {
             try
             {
-                // 1. 게시글과 연관된 태그 정보를 DB에서 함께 불러옵니다.
+                // 게시글 및 태그 데이터 조회
                 var post = await _context.Posts
                     .Include(p => p.PostTags)
                     .Include(p => p.Applications)
                     .FirstOrDefaultAsync(p => p.Id == postId);
 
-                // 2. 글이 없으면 실패 응답 반환
+                // 결과 반환
                 if (post == null)
                 {
                     return new GetPostDetailResponse { IsSuccess = false, Message = "존재하지 않는 게시글입니다." };
@@ -143,7 +143,7 @@ namespace TeamMatching.Web.Services
                     }
                 }
 
-                // 3. 브랜치 구조에 맞게 평탄화된 DTO에 데이터를 담아 반환
+                // 데이터 래핑 반환
                 return new GetPostDetailResponse
                 {
                     IsSuccess = true,
@@ -154,9 +154,9 @@ namespace TeamMatching.Web.Services
                     Category = post.Category,
                     CurrentMembers = post.CurrentMembers,
                     MaxMembers = post.MaxMembers,
-                    // PostTags 배열에서 TagId 숫자만 뽑아서 리스트로 변환합니다.
+                    // 태그 식별자 추출
                     SelectedTagIds = post.PostTags.Select(pt => pt.TagId).ToList(),
-                    // 현재 접속한 유저 ID가 있고, 그 ID가 글 작성자 ID와 같다면 true
+                    // 본인 작성 여부 매핑
                     IsMyPost = currentUserId.HasValue && post.AuthorId == currentUserId.Value,
                     IsClosed = post.Status != PostStatus.Recruiting,
                     CreatedAt = post.CreatedAt,
@@ -170,29 +170,29 @@ namespace TeamMatching.Web.Services
                 return new GetPostDetailResponse { IsSuccess = false, Message = $"상세 정보 조회 중 오류 발생: {ex.Message}" };
             }
         }
-        // ... 상단에 using Microsoft.EntityFrameworkCore; 확인 ...
 
+        // 특정 모집글에 들어온 지원서 목록 조회
         public async Task<GetApplicationsResponse> GetApplicationsByPostIdAsync(int postId)
         {
             try
             {
-                // 1. Applicant 대신 이미 만들어두신 User 속성을 사용합니다!
+                // 사용자 속성 활용
                 var applications = await _context.Applications
                     .Where(a => a.PostId == postId)
-                    .Include(a => a.User) // <--- 여기를 a.User로 수정!
+                    .Include(a => a.User) // 유저 정보 조인
                         .ThenInclude(u => u!.UserTags)
-                    .OrderByDescending(a => a.CreatedAt) // 최신 지원순 정렬
+                    .OrderByDescending(a => a.CreatedAt) // 최신 등록순 정렬
                     .ToListAsync();
 
-                // 2. DTO로 변환할 때도 a.User에서 정보를 꺼내옵니다.
+                // 엔티티 정보 포맷팅
                 var appList = applications.Select(a => new ApplicationItemDto
                 {
                     ApplicationId = a.Id,
-                    // Applicant가 아닌 User에서 닉네임을 가져옵니다.
+                    // 닉네임 추출
                     Nickname = a.User?.Nickname ?? "알 수 없는 사용자",
                     Bio = a.User?.Bio,
                     Message = a.Message ?? string.Empty,
-                    // User의 태그 리스트에서 ID만 추출
+                    // 태그 식별자 분리
                     SelectedTagIds = a.User?.UserTags.Select(ut => ut.TagId).ToList() ?? new List<int>(),
                     CreatedAt = a.CreatedAt,
                     Status = a.Status,
@@ -205,7 +205,7 @@ namespace TeamMatching.Web.Services
                 {
                     IsSuccess = true,
                     Message = "지원자 목록을 성공적으로 불러왔습니다.",
-                    Applications = appList // Flat하게 리스트 주입
+                    Applications = appList
                 };
             }
             catch (Exception ex)
@@ -217,27 +217,28 @@ namespace TeamMatching.Web.Services
                 };
             }
         }
-        // 모집글 삭제 서비스 로직
+
+        // 모집글 삭제
         public async Task<DeletePostResponse> DeletePostAsync(int postId, int currentUserId)
         {
             try
             {
-                // 1. 데이터베이스에서 삭제할 게시글을 찾습니다.
+                // 삭제 대상 게시글 조회
                 var post = await _context.Posts.FindAsync(postId);
 
-                // 2. 예외 처리: 글이 이미 없거나 찾을 수 없는 경우
+                // 삭제 예외 검증
                 if (post == null)
                 {
                     return new DeletePostResponse { IsSuccess = false, Message = "존재하지 않거나 이미 삭제된 게시글입니다." };
                 }
 
-                // 3. 권한 검사: 현재 접속한 유저(currentUserId)와 글의 원래 작성자(AuthorId)가 다르면 거절합니다.
+                // 삭제 권한 검사
                 if (post.AuthorId != currentUserId)
                 {
                     return new DeletePostResponse { IsSuccess = false, Message = "본인이 작성한 게시글만 삭제할 수 있습니다." };
                 }
 
-                // 4. 권한이 확인되면 DB에서 삭제하고 변경사항을 저장합니다.
+                // 데이터 삭제 반영
                 _context.Posts.Remove(post);
                 await _context.SaveChangesAsync();
 
@@ -252,19 +253,20 @@ namespace TeamMatching.Web.Services
                 return new DeletePostResponse { IsSuccess = false, Message = $"게시글 삭제 중 오류가 발생했습니다: {ex.Message}" };
             }
         }
-        // 모집글 지원 서비스 로직
+
+        // 모집글 지원서 제출
         public async Task<ApplyPostResponse> ApplyPostAsync(int postId, int userId, ApplyPostRequest request)
         {
             try
             {
-                // 1. 게시글이 실제로 존재하는지 확인
+                // 게시글 존재 여부 검사
                 var post = await _context.Posts.FindAsync(postId);
                 if (post == null)
                 {
                     return new ApplyPostResponse { IsSuccess = false, Message = "존재하지 않는 게시글입니다." };
                 }
 
-                // 2. (선택사항) 이미 지원했는지 체크하는 로직을 넣으면 중복 지원을 방지할 수 있습니다.
+                // 중복 지원 여부 점검
                 var alreadyApplied = await _context.Applications
                     .AnyAsync(a => a.PostId == postId && a.UserId == userId);
 
@@ -273,7 +275,7 @@ namespace TeamMatching.Web.Services
                     return new ApplyPostResponse { IsSuccess = false, Message = "이미 이 프로젝트에 지원하셨습니다." };
                 }
 
-                // 3. 지원서 엔티티 생성 및 저장
+                // 지원서 데이터 저장
                 var application = new Application
                 {
                     PostId = postId,
@@ -297,12 +299,13 @@ namespace TeamMatching.Web.Services
                 return new ApplyPostResponse { IsSuccess = false, Message = $"지원 중 오류 발생: {ex.Message}" };
             }
         }
-        // 모집글 수정 서비스 로직
+
+        // 기존 모집글 수정
         public async Task<UpdatePostResponse> UpdatePostAsync(int postId, int userId, UpdatePostRequest request)
         {
             try
             {
-                // 1. 수정할 글을 기존 태그 정보와 함께 불러옵니다.
+                // 수정 대상 게시글 조회
                 var post = await _context.Posts
                     .Include(p => p.PostTags)
                     .FirstOrDefaultAsync(p => p.Id == postId);
@@ -312,13 +315,13 @@ namespace TeamMatching.Web.Services
                     return new UpdatePostResponse { IsSuccess = false, Message = "존재하지 않는 게시글입니다." };
                 }
 
-                // 2. 권한 체크: 본인 글인지 확인
+                // 수정 권한 검증
                 if (post.AuthorId != userId)
                 {
                     return new UpdatePostResponse { IsSuccess = false, Message = "본인이 작성한 글만 수정할 수 있습니다." };
                 }
 
-                // 3. 일반 정보 업데이트
+                // 게시글 내용 갱신
                 post.Title = request.Title;
                 post.Content = request.Content;
                 post.Summary = request.Summary;
@@ -326,7 +329,7 @@ namespace TeamMatching.Web.Services
                 post.MaxMembers = request.MaxMembers;
                 post.UpdatedAt = DateTime.Now;
 
-                // 4. 태그 정보 업데이트 (기존 태그 삭제 후 새 태그 추가)
+                // 태그 갱신
                 _context.PostTags.RemoveRange(post.PostTags);
 
                 if (request.SelectedTagIds != null)
@@ -350,6 +353,8 @@ namespace TeamMatching.Web.Services
                 return new UpdatePostResponse { IsSuccess = false, Message = $"수정 중 오류 발생: {ex.Message}" };
             }
         }
+
+        // 팀원 수락/거절
         public async Task<AcceptMemberResponse> AcceptMemberAsync(int postId, int currentUserId, AcceptMemberRequest request)
         {
             try
@@ -375,7 +380,7 @@ namespace TeamMatching.Web.Services
 
                 if (request.Status == ApplicationStatus.Accepted)
                 {
-                    // 현재 모집 인원 증가
+                    // 모집 인원 증분 반영
                     if (application.Post != null)
                     {
                         if (application.Post.CurrentMembers >= application.Post.MaxMembers)

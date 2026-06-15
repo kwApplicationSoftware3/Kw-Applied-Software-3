@@ -37,10 +37,12 @@ namespace TeamMatching.Shared.Entities
         public int ViewCount { get; set; } = 0; // 조회수
 
         public DateTime CreatedAt { get; set; } = DateTime.Now; // 작성 일시
+
         public DateTime? UpdatedAt { get; set; } // 수정 일시
 
         // 관계 설정
         public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>(); // 필요 기술 스택
+
         public ICollection<Application> Applications { get; set; } = new List<Application>(); // 지원서 목록
     }
 }

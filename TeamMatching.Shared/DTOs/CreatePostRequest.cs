@@ -9,12 +9,12 @@ namespace TeamMatching.Shared.DTOs
         public string Title { get; set; } = string.Empty; // 제목
         
         [Required(ErrorMessage = "상세 설명을 입력해주세요.")]
-        public string Content { get; set; } = string.Empty; // 글 상세 내용
+        public string Content { get; set; } = string.Empty; // 게시글 내용
         
         [Required(ErrorMessage = "모집글 요약을 입력해주세요.")]
         public string Summary {  get; set; } = string.Empty; // 글 내용 미리보기
 
-        public string? Category { get; set; } // 프로젝트 분야
+        public string? Category { get; set; } // 분야
 
         public int MaxMembers { get; set; } = 2; // 모집 인원
 

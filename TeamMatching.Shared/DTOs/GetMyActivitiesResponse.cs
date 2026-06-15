@@ -38,8 +38,8 @@ namespace TeamMatching.Shared.DTOs
 
         public int PostId { get; set; }
 
-        public bool IsEnded { get; set; } // 프로젝트 종료 여부 (PostStatus.Completed)
-        public bool IsEvaluated { get; set; } // 내가 이 팀을 이미 평가했는지 여부
+        public bool IsEnded { get; set; } // 종료 여부
+        public bool IsEvaluated { get; set; } // 평가 여부
     }
 
     public class GetMyActivitiesResponse
@@ -48,10 +48,10 @@ namespace TeamMatching.Shared.DTOs
 
         public string Message { get; set; } = string.Empty; // 결과 메시지
 
-        public List<MyPostDto> MyPosts { get; set; } = new List<MyPostDto>(); // 내 작성글 목록
+        public List<MyPostDto> MyPosts { get; set; } = new List<MyPostDto>(); // 작성글 목록
 
-        public List<MyApplicationDto> MyApplications { get; set; } = new List<MyApplicationDto>(); // 내 지원서 목록
+        public List<MyApplicationDto> MyApplications { get; set; } = new List<MyApplicationDto>(); // 지원서 목록
 
-        public List<ActivityTeamDto> MyTeams { get; set; } = new List<ActivityTeamDto>(); // 내 팀 목록
+        public List<ActivityTeamDto> MyTeams { get; set; } = new List<ActivityTeamDto>(); // 소속 팀 목록
     }
 }

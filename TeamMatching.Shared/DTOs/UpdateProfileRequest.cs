@@ -14,7 +14,7 @@ namespace TeamMatching.Shared.DTOs
 
         public string? Bio { get; set; } // 자기소개
 
-        public List<int> SelectedTagIds { get; set; } = new List<int>(); // 선택한 기술 스택 태그 ID 목록
+        public List<int> SelectedTagIds { get; set; } = new List<int>(); // 보유 기술 스택
 
         public string? ProfileImageUrl { get; set; } // 프로필 이미지 경로
 

@@ -21,15 +21,15 @@ namespace TeamMatching.Shared.DTOs
         public string Title { get; set; } = string.Empty;      // 글 제목
         public int CurrentMembers { get; set; }                // 현재 참여 인원수
         public int MaxMembers { get; set; }                    // 최대 모집 인원수
-        public List<int> SelectedTagIds { get; set; } = new(); // 선택된 기술 스택(태그) ID 목록
-        public string Content { get; set; } = string.Empty;    // 글 본문 상세 내용
-        public string Summary { get; set; } = string.Empty;    // 모집글 요약 (수정 폼 미리채움용)
-        public string? Category { get; set; }                  // 프로젝트 분야 (수정 폼 미리채움용)
-        public DateTime CreatedAt { get; set; } // 글 작성 일자
-        public DateTime? UpdatedAt { get; set; } // 글 수정 일자
-        public int ApplicationCount { get; set; } // 지원서 개수
-        public bool IsMyPost { get; set; }                     // 접속한 유저가 이 글의 작성자인지 여부 (true면 수정/삭제 버튼 노출)
+        public List<int> SelectedTagIds { get; set; } = new(); // 선택된 기술 스택 ID 목록
+        public string Content { get; set; } = string.Empty;    // 게시글 내용
+        public string Summary { get; set; } = string.Empty;    // 요약
+        public string? Category { get; set; }                  // 분야
+        public DateTime CreatedAt { get; set; } // 작성 시간
+        public DateTime? UpdatedAt { get; set; } // 수정 시간
+        public int ApplicationCount { get; set; } // 지원자 수
+        public bool IsMyPost { get; set; }                     // 본인 작성 여부
         public bool IsClosed { get; set; }                     // 모집 마감 여부
-        public List<TeamMemberRolePositionDto>? TeamMembers { get; set; } // 팀이 결성된 경우 팀원 정보
+        public List<TeamMemberRolePositionDto>? TeamMembers { get; set; } // 팀원 정보
     }
 }

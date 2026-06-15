@@ -3,9 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TeamMatching.Shared.DTOs
 {
-    /// <summary>
-    /// 회원가입 요청 DTO
-    /// </summary>
     public class RegisterRequest
     {
         [Required(ErrorMessage = "이메일은 필수 입력 항목입니다.")]
@@ -25,6 +22,6 @@ namespace TeamMatching.Shared.DTOs
 
         public string? Bio { get; set; } // 자기소개
 
-        public List<int> SelectedTagIds { get; set; } = []; // 선택한 기술 스택 태그 ID 목록
+        public List<int> SelectedTagIds { get; set; } = []; // 보유 기술 스택
     }
 }

@@ -8,8 +8,8 @@ namespace TeamMatching.Shared.DTOs
     {
         public int UserId { get; set; } // 팀원 ID
         public string Nickname { get; set; } = string.Empty; // 팀원 닉네임
-        public TeamRole Role { get; set; } = TeamRole.Member;// 팀 내 역할 (팀장/팀원)
-        public string? Position { get; set; } // 팀 내 구체적 역할 (백엔드, 프론트엔드, 디자이너 등)
+        public TeamRole Role { get; set; } = TeamRole.Member;// 팀 내 역할
+        public string? Position { get; set; } // 팀 내 구체적 역할
     }
     public class GetReviewTargetResponse
     {
