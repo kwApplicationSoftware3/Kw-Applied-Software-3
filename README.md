@@ -8,14 +8,10 @@ TeamMatching.Web에 `.env` 파일을 생성하고 아래 내용을 복사하여 
 
 ```env
 # [ MySQL 데이터베이스 연결 정보 ]
+
+
 DB_CONNECTION="Server=localhost;Port=3306;Database=teammatching_db;User=root;Password=`DB_PASSWORD`;"
 ACCESS_TOKEN_EXP_MIN="1440"
 JWT_SECRET="YourSuperSecretKeyForJWTAuth2026!TeamMatching"
 JWT_ISSUER="TeamMatchingWeb"
 JWT_AUDIENCE="TeamMatchingUsers"
-
-# [ JWT 토큰 인증 키 ]
-# (토큰 암호화에 사용되는 임의의 문자열입니다. 기본값을 그대로 사용하셔도 무방합니다.)
-JWT_SECRET_KEY=TeamMatchingSuperSecretKey2026KwUniv!
-JWT_ISSUER=TeamMatchingApp
-JWT_AUDIENCE=TeamMatchingAppUsers
