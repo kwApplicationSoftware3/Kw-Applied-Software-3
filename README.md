@@ -8,7 +8,7 @@
 <details>
 <summary><b>📂 .env 파일을 사용하시는 경우 (클릭해서 열기)</b></summary>
 
-프로젝트 루트 디렉토리에 `.env` 파일을 생성하고 아래 내용을 복사하여 붙여넣어 주세요.
+TeamMatching.Web에 `.env` 파일을 생성하고 아래 내용을 복사하여 붙여넣어 주세요.
 `DB_PASSWORD` 부분에 교수님의 MySQL root 비밀번호를 입력해 주시면 됩니다.
 
 ```env
