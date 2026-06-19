@@ -123,6 +123,10 @@
                                         <div class="applicant-info">
                                             <span class="applicant-name">@app.Nickname</span>
                                             <span class="applicant-date">@app.CreatedAt.ToShortDateString()</span>
+                                            <div class="applicant-rating" title="신뢰도 @app.ReliabilityScore.ToString("F1") · 기여도 @app.ContributionScore.ToString("F1") · 소통 @app.CommunicationScore.ToString("F1")">
+                                                <span class="stars">@StarString(AvgScore(app))</span>
+                                                <span class="rating-num">@AvgScore(app).ToString("F1")</span>
+                                            </div>
                                             @if (!string.IsNullOrWhiteSpace(app.Bio))
                                             {
                                                 <p class="applicant-bio">@app.Bio</p>
@@ -143,6 +147,10 @@
                                             @if (app.Status == ApplicationStatus.Accepted)
                                             {
                                                 <button class="btn-accepted" disabled>✓ 수락됨</button>
+                                            }
+                                            else if (app.Status == ApplicationStatus.Rejected)
+                                            {
+                                                <button class="btn-rejected" disabled>✕ 거절됨</button>
                                             }
                                             else
                                             {
@@ -214,6 +222,10 @@
                                     <button class="btn-outline full-width" @onclick="() => isEditing = false">취소</button>
                                 }
                             }
+                            else if (post.IsClosed)
+                            {
+                                <div class="closed-notice">모집이 마감되어 지원할 수 없습니다.</div>
+                            }
                             else
                             {
                                 <div class="apply-section">
@@ -225,7 +237,14 @@
                             }
                         </Authorized>
                         <NotAuthorized>
-                            <button class="btn-primary full-width" @onclick='() => Nav.NavigateTo("/login")'>로그인하고 지원하기</button>
+                            @if (post.IsClosed)
+                            {
+                                <div class="closed-notice">모집이 마감된 글입니다.</div>
+                            }
+                            else
+                            {
+                                <button class="btn-primary full-width" @onclick='() => Nav.NavigateTo("/login")'>로그인하고 지원하기</button>
+                            }
                         </NotAuthorized>
                     </AuthorizeView>
 
@@ -240,6 +259,15 @@
 </div>
 
 @code {
+    private static float AvgScore(ApplicationItemDto a)
+        => (a.ReliabilityScore + a.ContributionScore + a.CommunicationScore) / 3f;
+
+    private static string StarString(float score)
+    {
+        int full = (int)Math.Round(Math.Clamp(score, 0, 5), MidpointRounding.AwayFromZero);
+        return new string('★', full) + new string('☆', 5 - full);
+    }
+
     [Parameter] public int Id { get; set; }
     private GetPostDetailResponse? post;
     private List<Tag>? availableTags;
@@ -480,6 +508,11 @@
     .applicant-date { font-size: 0.8rem; color: #9ca3af; margin-left: 1rem; }
     .applicant-bio { margin: 0.5rem 0 0; color: #6b7280; font-size: 0.88rem; font-style: italic; }
     .applicant-msg { margin: 0.75rem 0; color: #4b5563; font-size: 0.95rem; }
+    .applicant-rating { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.75rem; vertical-align: middle; }
+    .applicant-rating .stars { color: #f59e0b; font-size: 0.95rem; letter-spacing: 1px; }
+    .applicant-rating .rating-num { font-size: 0.82rem; font-weight: 700; color: #6b7280; }
+    .btn-rejected { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-weight: 700; cursor: not-allowed; }
+    .closed-notice { text-align: center; padding: 0.85rem; background: #f3f4f6; color: #6b7280; border-radius: 0.5rem; font-weight: 600; font-size: 0.92rem; }
     .full-width { width: 100%; padding: 0.75rem; }
     .mb-2 { margin-bottom: 0.5rem; }
     .mt-2 { margin-top: 1.5rem; }
