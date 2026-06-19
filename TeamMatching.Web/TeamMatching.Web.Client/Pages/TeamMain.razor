@@ -138,6 +138,7 @@
                             <div class="post-detail-header">
                                 <h2 class="post-detail-title">@selectedPost.Title</h2>
                                 <div class="post-detail-meta">
+                                    <span class="post-detail-author">@selectedPost.NickName</span>
                                     <span>@selectedPost.CreatedAt.ToShortDateString()</span>
                                     @if (selectedPost.IsMyPost)
                                     {
@@ -681,6 +682,8 @@
     .post-detail-header { display: flex; justify-content: space-between; align-items: flex-start; }
     .post-detail-title { font-size: 1.4rem; font-weight: 800; margin: 0; }
     .post-detail-meta { display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-size: 0.85rem; flex-shrink: 0; }
+    .post-detail-author { font-weight: 700; color: #374151; }
+    .post-detail-author::after { content: "·"; margin-left: 0.5rem; color: #d1d5db; }
     .post-body { line-height: 1.7; white-space: pre-wrap; color: #374151; padding: 1rem 0; }
 
     /* 댓글 */
